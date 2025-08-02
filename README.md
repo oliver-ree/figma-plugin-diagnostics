@@ -1,6 +1,6 @@
-# My Figma Plugin
+# Figma Plugin Diagnostics
 
-A basic Figma plugin that creates rectangles.
+A Figma plugin that creates reusable button components for diagnostics and testing.
 
 ## Development
 
@@ -29,4 +29,5 @@ A basic Figma plugin that creates rectangles.
 ## Usage
 
 1. Run the plugin in Figma
-2. Click "Create Rectangle" to add an orange rectangle to your canvas
+2. Click "Create Component" to add a reusable button component to your canvas
+3. The component will appear in your Assets panel for reuse across your design

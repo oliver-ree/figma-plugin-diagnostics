@@ -10,19 +10,62 @@ figma.showUI(__html__, { width: 320, height: 240 });
 // callback. The callback will be passed the "pluginMessage" property of the
 // posted message.
 figma.ui.onmessage = msg => {
-  // One way of distinguishing between different types of messages sent from
-  // your HTML page is to use an object with a "type" property like this.
-  if (msg.type === 'create-rectangle') {
-    const rect = figma.createRectangle();
-    rect.x = 150;
-    rect.y = 100;
-    rect.fills = [{type: 'SOLID', color: {r: 1, g: 0.5, b: 0}}];
-    figma.currentPage.appendChild(rect);
-    figma.currentPage.selection = [rect];
-    figma.viewport.scrollAndZoomIntoView([rect]);
+  // Handle different message types from the UI
+  if (msg.type === 'create-component') {
+    // Create component directly
+    const component = figma.createComponent();
+    component.name = "Diagnostic Button Component";
+    component.description = "A reusable button component created by the diagnostics plugin";
+    component.resize(120, 40);
+    component.x = 150;
+    component.y = 100;
+    
+    // Set component background
+    component.fills = [{
+      type: 'SOLID', 
+      color: {r: 0.094, g: 0.627, b: 0.984} // Figma blue
+    }];
+    
+    // Add corner radius
+    component.cornerRadius = 8;
+    
+    // Load font and create text
+    figma.loadFont({ family: "Inter", style: "Regular" }).then(() => {
+      // Create text for the button
+      const text = figma.createText();
+      text.name = "Button Text";
+      text.characters = "Button";
+      text.fontSize = 14;
+      text.fills = [{type: 'SOLID', color: {r: 1, g: 1, b: 1}}]; // White text
+      
+      // Center the text in the component
+      text.x = (120 - text.width) / 2;
+      text.y = (40 - text.height) / 2;
+      
+      // Add text to component
+      component.appendChild(text);
+      
+      // Add component to page
+      figma.currentPage.appendChild(component);
+      
+      // Select the component
+      figma.currentPage.selection = [component];
+      figma.viewport.scrollAndZoomIntoView([component]);
+      
+      console.log("Created component:", component.name);
+      figma.notify("✅ Component created successfully!");
+    }).catch(() => {
+      // Fallback if font loading fails - create without text
+      figma.currentPage.appendChild(component);
+      
+      figma.currentPage.selection = [component];
+      figma.viewport.scrollAndZoomIntoView([component]);
+      
+      console.log("Created component (no text):", component.name);
+      figma.notify("✅ Component created (font load failed)");
+    });
   }
 
-  // Make sure to close the plugin when you're done. Otherwise the plugin will
-  // keep running, which shows the cancel button at the bottom of the screen.
+  // Close the plugin
   figma.closePlugin();
 };

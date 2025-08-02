@@ -46,14 +46,17 @@
 <body>
   <div class="container">
     <h2>Figma Plugin Diagnostics</h2>
-    <button id="create">Create Rectangle</button>
+    <button id="create">Create Component</button>
+    <p style="font-size: 11px; color: #666; margin-top: 12px; line-height: 1.4;">
+      Creates a reusable button component with text and styling
+    </p>
   </div>
 
   <script>
     // This is how we can access the parent iframe's context
     // and send messages to the plugin code
     document.getElementById('create').onclick = () => {
-      parent.postMessage({ pluginMessage: { type: 'create-rectangle' } }, '*');
+      parent.postMessage({ pluginMessage: { type: 'create-component' } }, '*');
     };
   </script>
 </body>
