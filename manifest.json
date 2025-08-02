@@ -1,6 +1,6 @@
 {
-  "name": "My Figma Plugin",
-  "id": "figma-plugin-id",
+  "name": "Figma Plugin Diagnostics",
+  "id": "figma-plugin-diagnostics",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",
@@ -10,7 +10,7 @@
     "figma"
   ],
   "networkAccess": {
-    "allowedDomains": [],
-    "reasoning": ""
+    "allowedDomains": ["none"],
+    "reasoning": "This plugin does not require network access"
   }
 }

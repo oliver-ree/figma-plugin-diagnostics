@@ -1,10 +1,10 @@
-// This file holds the main code for the plugin.
-// It has access to the *document*.
-// You can access browser APIs such as the network by creating a UI
-// which contains a full browser environment (see documentation).
+// Main plugin code for Figma Plugin Diagnostics
+// This file holds the main code for the plugin and has access to the document.
+
+console.log("Plugin starting...");
 
 // This shows the HTML page in "ui.html".
-figma.showUI(__html__);
+figma.showUI(__html__, { width: 320, height: 240 });
 
 // Calls to "parent.postMessage" from within the HTML page will trigger this
 // callback. The callback will be passed the "pluginMessage" property of the
