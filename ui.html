@@ -46,17 +46,97 @@
 <body>
   <div class="container">
     <h2>Figma Plugin Diagnostics</h2>
-    <button id="create">Create Component</button>
-    <p style="font-size: 11px; color: #666; margin-top: 12px; line-height: 1.4;">
-      Creates a reusable button component with text and styling
+    
+    <div id="components-section">
+      <h3 style="margin: 0 0 8px 0; font-size: 12px; color: #666;">Available Components:</h3>
+      <div id="components-list" style="margin-bottom: 12px;">
+        <p style="font-size: 11px; color: #999; font-style: italic;">Loading components...</p>
+      </div>
+      <button id="refresh" style="background: #666; margin-bottom: 12px;">Refresh List</button>
+    </div>
+    
+    <div id="no-components" style="display: none;">
+      <p style="font-size: 11px; color: #999; font-style: italic; text-align: center; margin: 20px 0;">
+        No components found in this file.<br>
+        Create some components first!
+      </p>
+    </div>
+    
+    <p style="font-size: 10px; color: #999; margin-top: 12px; line-height: 1.4;">
+      Select a component to create an instance of it on the canvas
     </p>
   </div>
 
   <script>
-    // This is how we can access the parent iframe's context
-    // and send messages to the plugin code
-    document.getElementById('create').onclick = () => {
-      parent.postMessage({ pluginMessage: { type: 'create-component' } }, '*');
+    let availableComponents = [];
+
+    // Listen for messages from the plugin code
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (msg.type === 'components-list') {
+        availableComponents = msg.components;
+        renderComponentsList();
+      }
+    };
+
+    function renderComponentsList() {
+      const listContainer = document.getElementById('components-list');
+      const noComponentsDiv = document.getElementById('no-components');
+      const componentsSection = document.getElementById('components-section');
+      
+      if (availableComponents.length === 0) {
+        componentsSection.style.display = 'none';
+        noComponentsDiv.style.display = 'block';
+        return;
+      }
+      
+      componentsSection.style.display = 'block';
+      noComponentsDiv.style.display = 'none';
+      
+      listContainer.innerHTML = '';
+      
+      availableComponents.forEach(component => {
+        const componentDiv = document.createElement('div');
+        componentDiv.style.cssText = `
+          padding: 8px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          margin-bottom: 4px;
+          cursor: pointer;
+          background: #f8f8f8;
+        `;
+        
+        componentDiv.innerHTML = `
+          <div style="font-weight: 600; font-size: 11px; color: #333;">${component.name}</div>
+          <div style="font-size: 10px; color: #666; margin-top: 2px;">${component.description}</div>
+        `;
+        
+        componentDiv.onclick = () => {
+          parent.postMessage({ 
+            pluginMessage: { 
+              type: 'create-instance', 
+              componentId: component.id 
+            } 
+          }, '*');
+        };
+        
+        // Hover effects
+        componentDiv.onmouseenter = () => {
+          componentDiv.style.background = '#e8f4fd';
+          componentDiv.style.borderColor = '#18a0fb';
+        };
+        componentDiv.onmouseleave = () => {
+          componentDiv.style.background = '#f8f8f8';
+          componentDiv.style.borderColor = '#ddd';
+        };
+        
+        listContainer.appendChild(componentDiv);
+      });
+    }
+
+    // Refresh button
+    document.getElementById('refresh').onclick = () => {
+      parent.postMessage({ pluginMessage: { type: 'refresh-components' } }, '*');
     };
   </script>
 </body>

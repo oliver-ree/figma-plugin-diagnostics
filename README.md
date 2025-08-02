@@ -1,6 +1,6 @@
 # Figma Plugin Diagnostics
 
-A Figma plugin that creates reusable button components for diagnostics and testing.
+A Figma plugin that helps with diagnostics and testing by creating instances of existing components in your file.
 
 ## Development
 
@@ -28,6 +28,8 @@ A Figma plugin that creates reusable button components for diagnostics and testi
 
 ## Usage
 
-1. Run the plugin in Figma
-2. Click "Create Component" to add a reusable button component to your canvas
-3. The component will appear in your Assets panel for reuse across your design
+1. Make sure you have components in your Figma file (create them manually first)
+2. Run the plugin in Figma
+3. The plugin will show a list of all available components in your file
+4. Click on any component to create an instance of it on the canvas
+5. Use the "Refresh List" button if you add new components while the plugin is open
