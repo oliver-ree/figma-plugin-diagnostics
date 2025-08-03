@@ -1,67 +1,80 @@
-// Main plugin code for Figma Plugin Diagnostics
-// This file holds the main code for the plugin and has access to the document.
+// JSON Attribute Inspector Plugin
+// This plugin allows you to paste JSON data and inspect its attributes
 
-console.log("Plugin starting...");
+console.log("JSON Attribute Inspector starting...");
 
-// This shows the HTML page in "ui.html".
-figma.showUI(__html__, { width: 300, height: 400 });
+// Show the UI
+figma.showUI(__html__, { width: 380, height: 500 });
 
-// Calls to "parent.postMessage" from within the HTML page will trigger this
-// callback. The callback will be passed the "pluginMessage" property of the
-// posted message.
-// Send available components to UI when plugin loads
-function sendComponentsToUI() {
-  // Find all components in the current file
-  const components = figma.root.findAll(node => node.type === "COMPONENT");
-  
-  const componentList = components.map(comp => ({
-    id: comp.id,
-    name: comp.name,
-    description: comp.description || "No description"
-  }));
-  
-  figma.ui.postMessage({
-    type: 'components-list',
-    components: componentList
-  });
-}
+// Store the current JSON data and selected attribute
+let currentJsonData = null;
+let selectedAttribute = null;
 
-// Send components list when plugin starts
-sendComponentsToUI();
-
+// Handle messages from the UI
 figma.ui.onmessage = msg => {
-  if (msg.type === 'refresh-components') {
-    sendComponentsToUI();
+  console.log("Received message:", msg.type);
+  
+  if (msg.type === 'attribute-selected') {
+    selectedAttribute = msg.attribute;
+    console.log("Selected attribute:", selectedAttribute);
+    
+    // Provide feedback about the selected attribute
+    figma.notify(`📋 Selected: ${selectedAttribute.path} = ${JSON.stringify(selectedAttribute.value)}`);
+    
+    // You could add more functionality here, such as:
+    // - Creating text nodes with the attribute value
+    // - Storing the attribute for later use
+    // - Applying the attribute to selected objects
   }
   
-  if (msg.type === 'create-instance') {
-    const componentId = msg.componentId;
-    
-    // Find the component by ID
-    const component = figma.getNodeById(componentId);
-    
-    if (component && component.type === "COMPONENT") {
-      // Create an instance of the component
-      const instance = component.createInstance();
-      instance.x = 150;
-      instance.y = 100;
-      
-      // Add instance to current page
-      figma.currentPage.appendChild(instance);
-      
-      // Select the instance
-      figma.currentPage.selection = [instance];
-      figma.viewport.scrollAndZoomIntoView([instance]);
-      
-      console.log("Created instance of:", component.name);
-      figma.notify(`✅ Created instance of "${component.name}"`);
+  if (msg.type === 'create-text-node') {
+    if (selectedAttribute) {
+      createTextNodeWithAttribute();
     } else {
-      figma.notify("❌ Component not found");
+      figma.notify("❌ No attribute selected");
     }
   }
-
-  // Close the plugin when done
+  
   if (msg.type === 'close-plugin') {
     figma.closePlugin();
   }
 };
+
+// Function to create a text node with the selected attribute
+async function createTextNodeWithAttribute() {
+  if (!selectedAttribute) {
+    figma.notify("❌ No attribute selected");
+    return;
+  }
+  
+  try {
+    // Load the default font
+    await figma.loadFont({ family: "Inter", style: "Regular" });
+    
+    // Create a text node
+    const textNode = figma.createText();
+    textNode.characters = `${selectedAttribute.path}: ${JSON.stringify(selectedAttribute.value)}`;
+    textNode.fontSize = 14;
+    textNode.fills = [{type: 'SOLID', color: {r: 0, g: 0, b: 0}}];
+    
+    // Position the text node
+    textNode.x = 100;
+    textNode.y = 100;
+    
+    // Add to current page
+    figma.currentPage.appendChild(textNode);
+    
+    // Select the text node
+    figma.currentPage.selection = [textNode];
+    figma.viewport.scrollAndZoomIntoView([textNode]);
+    
+    figma.notify(`✅ Created text node: ${selectedAttribute.path}`);
+    
+  } catch (error) {
+    console.error("Error creating text node:", error);
+    figma.notify("❌ Error creating text node");
+  }
+}
+
+// Optional: Log when plugin is ready
+console.log("Plugin ready - paste JSON data to begin inspection");

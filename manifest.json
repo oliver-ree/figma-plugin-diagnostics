@@ -1,6 +1,6 @@
 {
-  "name": "Figma Plugin Diagnostics",
-  "id": "figma-plugin-diagnostics",
+  "name": "JSON Attribute Inspector",
+  "id": "json-attribute-inspector",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",

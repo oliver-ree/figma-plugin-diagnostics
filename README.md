@@ -1,6 +1,6 @@
-# Figma Plugin Diagnostics
+# JSON Attribute Inspector
 
-A Figma plugin that helps with diagnostics and testing by creating instances of existing components in your file.
+A Figma plugin that allows you to paste JSON data and inspect all its attributes through an interactive dropdown interface.
 
 ## Development
 
@@ -28,8 +28,18 @@ A Figma plugin that helps with diagnostics and testing by creating instances of 
 
 ## Usage
 
-1. Make sure you have components in your Figma file (create them manually first)
-2. Run the plugin in Figma
-3. The plugin will show a list of all available components in your file
-4. Click on any component to create an instance of it on the canvas
-5. Use the "Refresh List" button if you add new components while the plugin is open
+1. Run the plugin in Figma
+2. Paste your JSON data into the text area
+3. Click "Apply JSON" to parse the data
+4. Select any attribute from the dropdown menu
+5. View detailed information about the selected attribute (path, value, type)
+6. The plugin will show notifications when you select attributes
+
+## Features
+
+- **JSON Parsing**: Paste any valid JSON and see it parsed instantly
+- **Deep Attribute Extraction**: Automatically finds all nested properties and array elements
+- **Interactive Dropdown**: Browse all attributes with path notation (e.g., `user.address.city`)
+- **Type Detection**: Shows whether each attribute is a string, number, object, array, etc.
+- **Real-time Feedback**: Get instant notifications about your selections
+- **Keyboard Shortcuts**: Use Cmd/Ctrl+Enter in the textarea to apply JSON quickly

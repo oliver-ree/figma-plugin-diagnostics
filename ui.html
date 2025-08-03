@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Figma Plugin Diagnostics</title>
+  <title>JSON Attribute Inspector</title>
   <style>
     body {
       margin: 0;
@@ -13,7 +13,8 @@
     }
     
     .container {
-      max-width: 300px;
+      width: 100%;
+      max-width: 350px;
     }
     
     h2 {
@@ -21,6 +22,36 @@
       font-size: 14px;
       font-weight: 600;
       color: #333;
+    }
+    
+    .section {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #666;
+    }
+    
+    textarea {
+      width: 100%;
+      height: 120px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 11px;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    
+    textarea:focus {
+      outline: none;
+      border-color: #18a0fb;
+      box-shadow: 0 0 0 2px rgba(24, 160, 251, 0.2);
     }
     
     button {
@@ -32,6 +63,7 @@
       font-size: 12px;
       cursor: pointer;
       width: 100%;
+      font-weight: 500;
     }
     
     button:hover {
@@ -41,103 +73,206 @@
     button:active {
       background: #0b7dd1;
     }
+    
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 12px;
+      background: white;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+    
+    select:focus {
+      outline: none;
+      border-color: #18a0fb;
+      box-shadow: 0 0 0 2px rgba(24, 160, 251, 0.2);
+    }
+    
+    .error {
+      color: #e74c3c;
+      font-size: 11px;
+      margin-top: 6px;
+      font-style: italic;
+    }
+    
+    .success {
+      color: #27ae60;
+      font-size: 11px;
+      margin-top: 6px;
+      font-style: italic;
+    }
+    
+    .attributes-section {
+      display: none;
+    }
+    
+    .attributes-section.show {
+      display: block;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Figma Plugin Diagnostics</h2>
+    <h2>JSON Attribute Inspector</h2>
     
-    <div id="components-section">
-      <h3 style="margin: 0 0 8px 0; font-size: 12px; color: #666;">Available Components:</h3>
-      <div id="components-list" style="margin-bottom: 12px;">
-        <p style="font-size: 11px; color: #999; font-style: italic;">Loading components...</p>
+    <!-- JSON Input Section -->
+    <div class="section">
+      <label for="json-input">Paste JSON Data:</label>
+      <textarea 
+        id="json-input" 
+        placeholder='{"name": "John", "age": 30, "city": "New York", "skills": ["JavaScript", "React"]}'
+      ></textarea>
+      <div id="json-message"></div>
+      <button id="apply-json">Apply JSON</button>
+    </div>
+    
+    <!-- Attributes Selection Section -->
+    <div class="section attributes-section" id="attributes-section">
+      <label for="attribute-select">Select Attribute:</label>
+      <select id="attribute-select">
+        <option value="">Choose an attribute...</option>
+      </select>
+      <div id="attribute-info" style="margin-top: 12px; padding: 8px; background: #f8f9fa; border-radius: 4px; font-size: 11px; display: none;">
+        <strong>Selected:</strong> <span id="selected-attribute"></span><br>
+        <strong>Value:</strong> <span id="selected-value"></span><br>
+        <strong>Type:</strong> <span id="selected-type"></span>
       </div>
-      <button id="refresh" style="background: #666; margin-bottom: 12px;">Refresh List</button>
     </div>
-    
-    <div id="no-components" style="display: none;">
-      <p style="font-size: 11px; color: #999; font-style: italic; text-align: center; margin: 20px 0;">
-        No components found in this file.<br>
-        Create some components first!
-      </p>
-    </div>
-    
-    <p style="font-size: 10px; color: #999; margin-top: 12px; line-height: 1.4;">
-      Select a component to create an instance of it on the canvas
-    </p>
   </div>
 
   <script>
-    let availableComponents = [];
+    let currentJsonData = null;
+    let attributePaths = [];
 
-    // Listen for messages from the plugin code
-    window.onmessage = (event) => {
-      const msg = event.data.pluginMessage;
-      if (msg.type === 'components-list') {
-        availableComponents = msg.components;
-        renderComponentsList();
-      }
-    };
-
-    function renderComponentsList() {
-      const listContainer = document.getElementById('components-list');
-      const noComponentsDiv = document.getElementById('no-components');
-      const componentsSection = document.getElementById('components-section');
+    // Extract all possible attribute paths from a JSON object
+    function extractAttributePaths(obj, prefix = '') {
+      const paths = [];
       
-      if (availableComponents.length === 0) {
-        componentsSection.style.display = 'none';
-        noComponentsDiv.style.display = 'block';
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          const currentPath = prefix ? `${prefix}.${key}` : key;
+          const value = obj[key];
+          
+          // Add the current path
+          paths.push({
+            path: currentPath,
+            value: value,
+            type: Array.isArray(value) ? 'array' : typeof value
+          });
+          
+          // If it's an object (and not an array), recurse deeper
+          if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            paths.push(...extractAttributePaths(value, currentPath));
+          }
+          
+          // If it's an array, also add paths for array elements
+          if (Array.isArray(value)) {
+            value.forEach((item, index) => {
+              const arrayPath = `${currentPath}[${index}]`;
+              paths.push({
+                path: arrayPath,
+                value: item,
+                type: Array.isArray(item) ? 'array' : typeof item
+              });
+              
+              // If array item is an object, recurse into it
+              if (typeof item === 'object' && item !== null && !Array.isArray(item)) {
+                paths.push(...extractAttributePaths(item, arrayPath));
+              }
+            });
+          }
+        }
+      }
+      
+      return paths;
+    }
+
+    // Apply JSON button click handler
+    document.getElementById('apply-json').onclick = () => {
+      const jsonInput = document.getElementById('json-input').value.trim();
+      const messageDiv = document.getElementById('json-message');
+      const attributesSection = document.getElementById('attributes-section');
+      
+      if (!jsonInput) {
+        messageDiv.innerHTML = '<div class="error">Please paste some JSON data first.</div>';
         return;
       }
       
-      componentsSection.style.display = 'block';
-      noComponentsDiv.style.display = 'none';
+      try {
+        // Parse the JSON
+        currentJsonData = JSON.parse(jsonInput);
+        
+        // Extract all attribute paths
+        attributePaths = extractAttributePaths(currentJsonData);
+        
+        // Update UI
+        messageDiv.innerHTML = `<div class="success">✅ JSON parsed successfully! Found ${attributePaths.length} attributes.</div>`;
+        
+        // Populate the dropdown
+        populateAttributeDropdown();
+        
+        // Show the attributes section
+        attributesSection.classList.add('show');
+        
+      } catch (error) {
+        messageDiv.innerHTML = `<div class="error">❌ Invalid JSON: ${error.message}</div>`;
+        attributesSection.classList.remove('show');
+      }
+    };
+
+    function populateAttributeDropdown() {
+      const select = document.getElementById('attribute-select');
+      select.innerHTML = '<option value="">Choose an attribute...</option>';
       
-      listContainer.innerHTML = '';
-      
-      availableComponents.forEach(component => {
-        const componentDiv = document.createElement('div');
-        componentDiv.style.cssText = `
-          padding: 8px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          margin-bottom: 4px;
-          cursor: pointer;
-          background: #f8f8f8;
-        `;
-        
-        componentDiv.innerHTML = `
-          <div style="font-weight: 600; font-size: 11px; color: #333;">${component.name}</div>
-          <div style="font-size: 10px; color: #666; margin-top: 2px;">${component.description}</div>
-        `;
-        
-        componentDiv.onclick = () => {
-          parent.postMessage({ 
-            pluginMessage: { 
-              type: 'create-instance', 
-              componentId: component.id 
-            } 
-          }, '*');
-        };
-        
-        // Hover effects
-        componentDiv.onmouseenter = () => {
-          componentDiv.style.background = '#e8f4fd';
-          componentDiv.style.borderColor = '#18a0fb';
-        };
-        componentDiv.onmouseleave = () => {
-          componentDiv.style.background = '#f8f8f8';
-          componentDiv.style.borderColor = '#ddd';
-        };
-        
-        listContainer.appendChild(componentDiv);
+      attributePaths.forEach((attr, index) => {
+        const option = document.createElement('option');
+        option.value = index;
+        option.textContent = `${attr.path} (${attr.type})`;
+        select.appendChild(option);
       });
     }
 
-    // Refresh button
-    document.getElementById('refresh').onclick = () => {
-      parent.postMessage({ pluginMessage: { type: 'refresh-components' } }, '*');
+    // Attribute selection handler
+    document.getElementById('attribute-select').onchange = (e) => {
+      const selectedIndex = e.target.value;
+      const infoDiv = document.getElementById('attribute-info');
+      
+      if (selectedIndex === '') {
+        infoDiv.style.display = 'none';
+        return;
+      }
+      
+      const selectedAttr = attributePaths[selectedIndex];
+      
+      document.getElementById('selected-attribute').textContent = selectedAttr.path;
+      document.getElementById('selected-value').textContent = JSON.stringify(selectedAttr.value);
+      document.getElementById('selected-type').textContent = selectedAttr.type;
+      
+      infoDiv.style.display = 'block';
+      
+      // Send selection to plugin code
+      parent.postMessage({ 
+        pluginMessage: { 
+          type: 'attribute-selected',
+          attribute: selectedAttr
+        } 
+      }, '*');
     };
+
+    // Allow pressing Enter in textarea to apply
+    document.getElementById('json-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        document.getElementById('apply-json').click();
+      }
+    });
   </script>
 </body>
 </html>
