@@ -46,6 +46,10 @@ figma.ui.onmessage = msg => {
     applyAllComponentMappings(msg.mappings);
   }
   
+  if (msg.type === 'create-batch-components') {
+    createBatchComponents(msg.componentId, msg.mappings, msg.arrayLength, msg.attributePaths);
+  }
+  
   if (msg.type === 'create-text-node') {
     if (selectedAttribute) {
       createTextNodeWithAttribute();
@@ -502,6 +506,103 @@ async function applyAllComponentMappings(mappings) {
 figma.on('selectionchange', () => {
   sendCurrentSelection();
 });
+
+// Create multiple component instances from array data
+async function createBatchComponents(componentId, mappings, arrayLength, attributePaths) {
+  const component = figma.getNodeById(componentId);
+  
+  if (!component || component.type !== "COMPONENT") {
+    figma.notify("❌ Component not found");
+    return;
+  }
+  
+  if (!arrayLength || arrayLength === 0) {
+    figma.notify("❌ No array items found");
+    return;
+  }
+  
+  try {
+    
+    const instances = [];
+    
+    // Create one instance for each array item
+    for (let i = 0; i < arrayLength; i++) {
+      const instance = component.createInstance();
+      instance.x = 150 + (i * 320); // Space them out horizontally
+      instance.y = 100;
+      figma.currentPage.appendChild(instance);
+      
+      const properties = {};
+      const textUpdates = [];
+      
+      // Apply mappings for this specific array index
+      for (const [propertyName, mapping] of Object.entries(mappings)) {
+        if (mapping.path && mapping.path.includes('[*]')) {
+          // Convert pattern to specific index
+          const actualPath = mapping.path.replace('[*]', `[${i}]`);
+          
+          // Find the actual value from the attributePaths data
+          const actualAttribute = attributePaths.find(attr => attr.path === actualPath);
+          const value = actualAttribute ? actualAttribute.value : `Item ${i + 1}`;
+          
+          if (propertyName.startsWith('text:')) {
+            const textNodeName = propertyName.replace('text:', '');
+            textUpdates.push({ nodeName: textNodeName, value: String(value) });
+          } else {
+            if (component.componentPropertyDefinitions && component.componentPropertyDefinitions[propertyName]) {
+              const propDef = component.componentPropertyDefinitions[propertyName];
+              
+              switch (propDef.type) {
+                case 'TEXT':
+                  properties[propertyName] = String(value);
+                  break;
+                case 'BOOLEAN':
+                  if (typeof value === 'boolean') {
+                    properties[propertyName] = value;
+                  }
+                  break;
+                case 'VARIANT':
+                  properties[propertyName] = String(value);
+                  break;
+              }
+            }
+          }
+        }
+      }
+      
+      // Apply component properties
+      if (Object.keys(properties).length > 0) {
+        instance.setProperties(properties);
+      }
+      
+      // Apply text updates
+      if (textUpdates.length > 0) {
+        await figma.loadFont({ family: "Inter", style: "Regular" });
+        
+        for (const textUpdate of textUpdates) {
+          const textNodes = instance.findAll(node => node.type === "TEXT");
+          const textNode = textNodes.find(node => node.name === textUpdate.nodeName);
+          
+          if (textNode) {
+            textNode.characters = textUpdate.value;
+          }
+        }
+      }
+      
+      instances.push(instance);
+    }
+    
+    // Select all created instances
+    figma.currentPage.selection = instances;
+    figma.viewport.scrollAndZoomIntoView(instances);
+    
+    figma.notify(`✅ Created ${arrayLength} ${component.name} instances from array data`);
+    
+  } catch (error) {
+    console.error("Error creating batch components:", error);
+    figma.notify(`❌ Error creating batch components: ${error.message}`);
+  }
+}
 
 // Optional: Log when plugin is ready
 console.log("Plugin ready - paste JSON data to begin inspection");
