@@ -1607,14 +1607,30 @@
     
     function handleAttributeSelection(originalPropertyName, displayPropertyName, attributePath) {
       if (attributePath) {
-        // Find the attribute object
-        const attribute = attributePaths.find(attr => attr.path === attributePath);
-        if (attribute) {
-          // Store using original name for backend, but keep display name for reference
-          componentMappings[originalPropertyName] = {
-            ...attribute,
-            displayPropertyName: displayPropertyName
-          };
+        // Check if this is a batch pattern (contains [*])
+        if (attributePath.includes('[*]')) {
+          // Handle batch pattern - create synthetic attribute object
+          const samplePath = attributePath.replace('[*]', '[0]');
+          const sampleAttribute = attributePaths.find(attr => attr.path === samplePath);
+          
+          if (sampleAttribute) {
+            componentMappings[originalPropertyName] = {
+              path: attributePath, // Keep the pattern with [*]
+              value: sampleAttribute.value, // Use sample value
+              type: sampleAttribute.type,
+              displayPropertyName: displayPropertyName
+            };
+          }
+        } else {
+          // Handle regular single attribute
+          const attribute = attributePaths.find(attr => attr.path === attributePath);
+          if (attribute) {
+            // Store using original name for backend, but keep display name for reference
+            componentMappings[originalPropertyName] = {
+              ...attribute,
+              displayPropertyName: displayPropertyName
+            };
+          }
         }
       } else {
         // Remove mapping if no attribute selected
