@@ -174,11 +174,42 @@
         <strong>Type:</strong> <span id="selected-type"></span>
       </div>
     </div>
+
+    <!-- Layer Mapping Section -->
+    <div class="section mapping-section" id="mapping-section" style="display: none;">
+      <label>🎯 Apply to Selected Layer:</label>
+      <div id="layer-info" style="margin-bottom: 12px; padding: 8px; background: #e8f4fd; border-radius: 4px; font-size: 11px;">
+        <div id="layer-status">Select a layer on the canvas...</div>
+      </div>
+      
+      <label for="property-select">Apply to Property:</label>
+      <select id="property-select">
+        <option value="">Choose layer property...</option>
+        <option value="text">📝 Text Content</option>
+        <option value="fill">🎨 Fill Color (hex)</option>
+        <option value="width">📏 Width</option>
+        <option value="height">📐 Height</option>
+        <option value="x">➡️ X Position</option>
+        <option value="y">⬇️ Y Position</option>
+        <option value="opacity">👻 Opacity (0-1)</option>
+        <option value="rotation">🔄 Rotation (degrees)</option>
+        <option value="name">🏷️ Layer Name</option>
+      </select>
+      
+      <div id="mapping-preview" style="display: none; margin: 12px 0; padding: 8px; background: #fff3cd; border-radius: 4px; font-size: 11px;">
+        <strong>Preview:</strong> <span id="preview-text"></span>
+      </div>
+      
+      <button id="apply-mapping" disabled>Apply to Layer</button>
+      <button id="refresh-selection" style="background: #666; margin-top: 8px;">Refresh Selection</button>
+    </div>
   </div>
 
   <script>
     let currentJsonData = null;
     let attributePaths = [];
+    let selectedAttribute = null;
+    let currentLayer = null;
 
     // Extract all possible attribute paths from a JSON object
     function extractAttributePaths(obj, prefix = '') {
@@ -376,32 +407,151 @@
       });
     }
 
+    // Listen for messages from the plugin code
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (msg.type === 'layer-selection') {
+        currentLayer = msg.layer;
+        updateLayerInfo();
+      }
+    };
+
     // Attribute selection handler
     document.getElementById('attribute-select').onchange = (e) => {
       const selectedIndex = e.target.value;
       const infoDiv = document.getElementById('attribute-info');
+      const mappingSection = document.getElementById('mapping-section');
       
       if (selectedIndex === '') {
         infoDiv.style.display = 'none';
+        mappingSection.style.display = 'none';
+        selectedAttribute = null;
         return;
       }
       
-      const selectedAttr = attributePaths[selectedIndex];
+      selectedAttribute = attributePaths[selectedIndex];
       
-      document.getElementById('selected-attribute').textContent = selectedAttr.path;
-      document.getElementById('selected-value').textContent = JSON.stringify(selectedAttr.value);
-      document.getElementById('selected-type').textContent = selectedAttr.type;
+      document.getElementById('selected-attribute').textContent = selectedAttribute.path;
+      document.getElementById('selected-value').textContent = JSON.stringify(selectedAttribute.value);
+      document.getElementById('selected-type').textContent = selectedAttribute.type;
       
       infoDiv.style.display = 'block';
+      mappingSection.style.display = 'block';
       
-      // Send selection to plugin code
+      // Request current layer selection from plugin
       parent.postMessage({ 
         pluginMessage: { 
-          type: 'attribute-selected',
-          attribute: selectedAttr
+          type: 'get-selection'
+        } 
+      }, '*');
+      
+      // Update mapping preview
+      updateMappingPreview();
+    };
+
+    // Property selection handler
+    document.getElementById('property-select').onchange = () => {
+      updateMappingPreview();
+    };
+
+    // Apply mapping button
+    document.getElementById('apply-mapping').onclick = () => {
+      const property = document.getElementById('property-select').value;
+      if (!selectedAttribute || !property || !currentLayer) {
+        return;
+      }
+      
+      parent.postMessage({
+        pluginMessage: {
+          type: 'apply-mapping',
+          attribute: selectedAttribute,
+          property: property,
+          layer: currentLayer
+        }
+      }, '*');
+    };
+
+    // Refresh selection button
+    document.getElementById('refresh-selection').onclick = () => {
+      parent.postMessage({ 
+        pluginMessage: { 
+          type: 'get-selection'
         } 
       }, '*');
     };
+
+    // Update layer info display
+    function updateLayerInfo() {
+      const layerStatus = document.getElementById('layer-status');
+      const applyButton = document.getElementById('apply-mapping');
+      
+      if (currentLayer) {
+        layerStatus.innerHTML = `
+          <strong>Selected:</strong> ${currentLayer.name} (${currentLayer.type})<br>
+          <strong>ID:</strong> ${currentLayer.id}
+        `;
+        applyButton.disabled = !selectedAttribute || !document.getElementById('property-select').value;
+      } else {
+        layerStatus.textContent = 'No layer selected. Select a layer on the canvas.';
+        applyButton.disabled = true;
+      }
+      
+      updateMappingPreview();
+    }
+
+    // Update mapping preview
+    function updateMappingPreview() {
+      const previewDiv = document.getElementById('mapping-preview');
+      const previewText = document.getElementById('preview-text');
+      const property = document.getElementById('property-select').value;
+      
+      if (!selectedAttribute || !property) {
+        previewDiv.style.display = 'none';
+        return;
+      }
+      
+      let preview = '';
+      const value = selectedAttribute.value;
+      
+      switch (property) {
+        case 'text':
+          preview = `Set text to: "${value}"`;
+          break;
+        case 'fill':
+          preview = `Set fill color to: ${value}`;
+          break;
+        case 'width':
+          preview = `Set width to: ${value}px`;
+          break;
+        case 'height':
+          preview = `Set height to: ${value}px`;
+          break;
+        case 'x':
+          preview = `Set X position to: ${value}`;
+          break;
+        case 'y':
+          preview = `Set Y position to: ${value}`;
+          break;
+        case 'opacity':
+          preview = `Set opacity to: ${value}`;
+          break;
+        case 'rotation':
+          preview = `Set rotation to: ${value}°`;
+          break;
+        case 'name':
+          preview = `Set layer name to: "${value}"`;
+          break;
+        default:
+          preview = `Apply ${selectedAttribute.path} = ${JSON.stringify(value)}`;
+      }
+      
+      previewText.textContent = preview;
+      previewDiv.style.display = 'block';
+      
+      // Enable/disable apply button
+      const applyButton = document.getElementById('apply-mapping');
+      applyButton.disabled = !currentLayer;
+    }
 
     // Allow pressing Enter in textarea to apply
     document.getElementById('json-input').addEventListener('keydown', (e) => {

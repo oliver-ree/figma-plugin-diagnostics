@@ -1,40 +1,93 @@
-Below are the steps to get your plugin running. You can also find instructions at:
+# JSON Attribute Inspector
 
-  https://www.figma.com/plugin-docs/plugin-quickstart-guide/
+A Figma plugin that allows you to paste JSON data, inspect all its attributes through an interactive dropdown interface, and apply attribute values directly to selected layers on the canvas.
 
-This plugin template uses Typescript and NPM, two standard tools in creating JavaScript applications.
+## Development
 
-First, download Node.js which comes with NPM. This will allow you to install TypeScript and other
-libraries. You can find the download link here:
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-  https://nodejs.org/en/download/
+2. Build the plugin:
+   ```bash
+   npm run build
+   ```
 
-Next, install TypeScript using the command:
+3. In Figma:
+   - Go to Plugins → Development → Import plugin from manifest...
+   - Select the `manifest.json` file from this directory
+   - Run the plugin
 
-  npm install -g typescript
+## Usage
 
-Finally, in the directory of your plugin, get the latest type definitions for the plugin API by running:
+1. Run the plugin in Figma
+2. Paste your JSON data into the text area
+3. Click "Apply JSON" to parse the data
+4. Select any attribute from the categorized dropdown menu
+5. Select a layer on the canvas (or create one)
+6. Choose what layer property to apply the attribute to
+7. Click "Apply to Layer" to execute the mapping
 
-  npm install --save-dev @figma/plugin-typings
+## Features
 
-If you are familiar with JavaScript, TypeScript will look very familiar. In fact, valid JavaScript code
-is already valid Typescript code.
+- **JSON Parsing**: Paste any valid JSON and see it parsed instantly
+- **Smart Categorization**: Attributes organized by type with emojis and counts
+  - 🏠 Root Level - Top-level properties
+  - 📦 Objects - All object-type properties  
+  - 📋 Arrays - All array-type properties
+  - 🔢 Array Items - Individual array elements
+  - 🌲 Nested Properties - Deep nested values
+- **Deep Attribute Extraction**: Automatically finds all nested properties and array elements
+- **Interactive Dropdown**: Browse all attributes with path notation (e.g., `user.address.city`)
+- **Layer Mapping**: Apply JSON attributes directly to selected layers on canvas
+- **Property Selection**: Choose what layer property to apply:
+  - 📝 Text Content
+  - 🎨 Fill Color (hex)
+  - 📏 Width/Height
+  - ➡️ Position (X/Y)
+  - 👻 Opacity
+  - 🔄 Rotation
+  - 🏷️ Layer Name
+- **Real-time Preview**: See exactly what will be applied before executing
+- **Auto-sync Selection**: Automatically detects when you select different layers
+- **Statistics Dashboard**: View breakdown of object types in your JSON
+- **Real-time Feedback**: Get instant notifications about your selections
+- **Keyboard Shortcuts**: Use Cmd/Ctrl+Enter in the textarea to apply JSON quickly
 
-TypeScript adds type annotations to variables. This allows code editors such as Visual Studio Code
-to provide information about the Figma API while you are writing code, as well as help catch bugs
-you previously didn't notice.
+## Example Workflow
 
-For more information, visit https://www.typescriptlang.org/
+1. **Paste sample JSON**:
+   ```json
+   {
+     "user": {
+       "name": "John Doe",
+       "profile": { "age": 30, "theme": "#FF5733" }
+     },
+     "dimensions": { "width": 200, "height": 100 }
+   }
+   ```
 
-Using TypeScript requires a compiler to convert TypeScript (code.ts) into JavaScript (code.js)
-for the browser to run.
+2. **Apply and explore**: See attributes categorized and ready to use
 
-We recommend writing TypeScript code using Visual Studio code:
+3. **Select a text layer** on canvas and map `user.name` → Text Content
 
-1. Download Visual Studio Code if you haven't already: https://code.visualstudio.com/.
-2. Open this directory in Visual Studio Code.
-3. Compile TypeScript to JavaScript: Run the "Terminal > Run Build Task..." menu item,
-    then select "npm: watch". You will have to do this again every time
-    you reopen Visual Studio Code.
+4. **Select a shape** and map `user.profile.theme` → Fill Color
 
-That's it! Visual Studio Code will regenerate the JavaScript file every time you save.
+5. **Resize elements** using `dimensions.width` → Width
+
+## Files
+
+- `manifest.json` - Plugin configuration
+- `code.js` - Main plugin logic that runs in Figma's sandbox
+- `ui.html` - User interface with JSON parser and layer mapping
+- `package.json` - Dependencies and scripts
+
+## Data-Driven Design
+
+Perfect for:
+- **Dynamic prototypes** with real data
+- **Design system testing** with various content
+- **Bulk content updates** from APIs or databases
+- **A/B testing** with different configurations
+- **Rapid iteration** with changing requirements
