@@ -647,6 +647,20 @@
       box-shadow: 0 0 0 3px rgba(24, 160, 251, 0.1);
     }
     
+    .attribute-select optgroup {
+      font-weight: bold;
+      color: #333;
+      background-color: #f8f9fa;
+      font-size: 11px;
+      padding: 4px 0;
+    }
+    
+    .attribute-select option {
+      font-weight: normal;
+      color: #555;
+      padding: 2px 8px;
+    }
+    
     .save-actions {
       margin-top: 24px;
       display: flex;
@@ -1428,6 +1442,81 @@
       document.getElementById('tab2-empty-state').style.display = 'block';
     }
     
+    function createSmartAttributeOptions() {
+      if (attributePaths.length === 0) {
+        return '<option value="">No attributes available</option>';
+      }
+      
+      // Group attributes by their final property name (e.g., "title", "description", etc.)
+      const groups = {};
+      
+      attributePaths.forEach(attr => {
+        // Extract the final property name (e.g., "title" from "0.insights[0].title")
+        const pathParts = attr.path.split('.');
+        const lastPart = pathParts[pathParts.length - 1];
+        const propertyName = lastPart.replace(/\[\d+\].*/, '').replace(/\[.*\]/, ''); // Remove array indices
+        
+        if (!groups[propertyName]) {
+          groups[propertyName] = [];
+        }
+        
+        // Create a friendly display name
+        let displayName = attr.path;
+        let shortValue = JSON.stringify(attr.value);
+        
+        // Truncate long values and clean up quotes
+        shortValue = shortValue.replace(/^"/, '').replace(/"$/, ''); // Remove surrounding quotes
+        if (shortValue.length > 40) {
+          shortValue = shortValue.substring(0, 37) + '...';
+        }
+        
+        // Make the path more readable
+        if (attr.path.includes('[')) {
+          // For array items, show which item it is
+          const arrayMatch = attr.path.match(/\[(\d+)\]/);
+          if (arrayMatch) {
+            const itemIndex = parseInt(arrayMatch[1]) + 1; // Convert to 1-based
+            displayName = `${propertyName} (Item ${itemIndex})`;
+          }
+        } else {
+          // For simple properties, just show the property name
+          displayName = propertyName;
+        }
+        
+        groups[propertyName].push({
+          path: attr.path,
+          displayName: displayName,
+          value: shortValue,
+          fullValue: attr.value
+        });
+      });
+      
+      // Build grouped options HTML
+      let options = '<option value="">Choose attribute...</option>';
+      
+      // Sort groups by property name for consistency
+      const sortedGroupNames = Object.keys(groups).sort();
+      
+      sortedGroupNames.forEach(groupName => {
+        const items = groups[groupName];
+        
+        if (items.length === 1) {
+          // Single item, no need for optgroup
+          const item = items[0];
+          options += `<option value="${item.path}">${item.displayName}: ${item.value}</option>`;
+        } else {
+          // Multiple items, use optgroup
+          options += `<optgroup label="${groupName.toUpperCase()}">`;
+          items.forEach(item => {
+            options += `<option value="${item.path}">${item.displayName}: ${item.value}</option>`;
+          });
+          options += '</optgroup>';
+        }
+      });
+      
+      return options;
+    }
+    
     function renderPropertyMappingRows() {
       const container = document.getElementById('property-mappings-list');
       container.innerHTML = '';
@@ -1436,13 +1525,8 @@
         const row = document.createElement('div');
         row.className = 'property-mapping-row';
         
-        // Create attribute dropdown options
-        const attributeOptions = [
-          '<option value="">Choose attribute...</option>',
-          ...attributePaths.map(attr => 
-            `<option value="${attr.path}">${attr.path} (${JSON.stringify(attr.value)})</option>`
-          )
-        ].join('');
+        // Create attribute dropdown options with smart grouping
+        const attributeOptions = createSmartAttributeOptions();
         
         row.innerHTML = `
           <div class="property-info">
