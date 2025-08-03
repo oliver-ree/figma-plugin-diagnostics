@@ -4,7 +4,7 @@
 console.log("JSON Attribute Inspector starting...");
 
 // Show the UI
-figma.showUI(__html__, { width: 440, height: 700 });
+figma.showUI(__html__, { width: 460, height: 750 });
 
 // Store the current JSON data and selected attribute
 let currentJsonData = null;

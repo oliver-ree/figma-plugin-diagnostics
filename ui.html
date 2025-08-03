@@ -188,6 +188,111 @@
     .target-selection {
       margin-bottom: 12px;
     }
+    
+    /* Attributes Cards */
+    .attributes-cards {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #e1e5e9;
+      border-radius: 8px;
+      background: #fafbfc;
+    }
+    
+    .attribute-card {
+      padding: 12px 16px;
+      border-bottom: 1px solid #e1e5e9;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    
+    .attribute-card:last-child {
+      border-bottom: none;
+    }
+    
+    .attribute-card:hover {
+      background: #f8f9fa;
+      border-left: 4px solid #18a0fb;
+      padding-left: 12px;
+    }
+    
+    .attribute-card.selected {
+      background: #e8f4fd;
+      border-left: 4px solid #18a0fb;
+      padding-left: 12px;
+    }
+    
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 4px;
+    }
+    
+    .card-category {
+      font-size: 10px;
+      font-weight: 500;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .card-type {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 500;
+      text-transform: lowercase;
+    }
+    
+    .type-string {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+    
+    .type-number {
+      background: #f3e5f5;
+      color: #7b1fa2;
+    }
+    
+    .type-boolean {
+      background: #e8f5e8;
+      color: #388e3c;
+    }
+    
+    .type-object {
+      background: #fff3e0;
+      color: #f57c00;
+    }
+    
+    .type-array {
+      background: #fce4ec;
+      color: #c2185b;
+    }
+    
+    .card-path {
+      font-size: 12px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 4px;
+      font-family: 'Monaco', 'Menlo', monospace;
+    }
+    
+    .card-value {
+      font-size: 11px;
+      color: #666;
+      line-height: 1.4;
+      word-break: break-all;
+    }
+    
+    .search-controls {
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 10;
+      padding-bottom: 8px;
+    }
   </style>
 </head>
 <body>
@@ -213,16 +318,48 @@
       <button id="apply-json">Apply JSON</button>
     </div>
     
-    <!-- Attributes Selection Section -->
+    <!-- Attributes Exploration Section -->
     <div class="section attributes-section" id="attributes-section">
-      <label for="attribute-select">Select Attribute:</label>
-      <select id="attribute-select">
-        <option value="">Choose an attribute...</option>
-      </select>
-      <div id="attribute-info" style="margin-top: 12px; padding: 8px; background: #f8f9fa; border-radius: 4px; font-size: 11px; display: none;">
-        <strong>Selected:</strong> <span id="selected-attribute"></span><br>
-        <strong>Value:</strong> <span id="selected-value"></span><br>
-        <strong>Type:</strong> <span id="selected-type"></span>
+      <!-- Search and Filters -->
+      <div class="search-controls">
+        <div class="search-box">
+          <input type="text" id="attribute-search" placeholder="Search attributes..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px;">
+        </div>
+        <div class="filter-controls" style="display: flex; gap: 8px; margin-top: 8px; align-items: center;">
+          <select id="type-filter" style="padding: 6px 8px; font-size: 11px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="">All Types</option>
+            <option value="string">String</option>
+            <option value="number">Number</option>
+            <option value="boolean">Boolean</option>
+            <option value="object">Object</option>
+            <option value="array">Array</option>
+          </select>
+          <select id="category-filter" style="padding: 6px 8px; font-size: 11px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="">All Categories</option>
+            <option value="root">Root Level</option>
+            <option value="nested">Nested</option>
+            <option value="arrays">Arrays</option>
+            <option value="primitives">Primitives</option>
+          </select>
+          <div style="margin-left: auto; font-size: 11px; color: #666;">
+            <span id="results-count">0 results</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Attributes Cards -->
+      <div id="attributes-cards" class="attributes-cards" style="margin-top: 16px;">
+        <!-- Cards will be populated here -->
+      </div>
+      
+      <!-- Selected Attribute Info -->
+      <div id="selected-attribute-card" style="display: none; margin-top: 16px; padding: 12px; background: #e8f4fd; border-radius: 8px; border-left: 4px solid #18a0fb;">
+        <div style="font-weight: 600; font-size: 12px; color: #333; margin-bottom: 8px;">✅ Selected Attribute</div>
+        <div style="font-size: 11px; color: #666;">
+          <strong>Path:</strong> <span id="selected-path"></span><br>
+          <strong>Value:</strong> <span id="selected-val"></span><br>
+          <strong>Type:</strong> <span id="selected-typ"></span>
+        </div>
       </div>
     </div>
 
@@ -334,6 +471,14 @@
       if (tabId === 'tab2' && attributePaths.length > 0) {
         populateComponentAttributeDropdown();
         requestAvailableComponents();
+      }
+      
+      // Reset search filters when switching to tab 1
+      if (tabId === 'tab1' && attributePaths.length > 0) {
+        document.getElementById('attribute-search').value = '';
+        document.getElementById('type-filter').value = '';
+        document.getElementById('category-filter').value = '';
+        populateAttributeCards();
       }
     }
 
@@ -454,8 +599,8 @@
           </div>
         `;
         
-        // Populate the dropdown
-        populateAttributeDropdown();
+        // Populate the cards
+        populateAttributeCards();
         
         // Show the attributes section
         attributesSection.classList.add('show');
@@ -466,71 +611,109 @@
       }
     };
 
-    function populateAttributeDropdown() {
-      const select = document.getElementById('attribute-select');
-      select.innerHTML = '<option value="">Choose an attribute...</option>';
+    let filteredAttributes = [];
+    
+    function populateAttributeCards() {
+      filteredAttributes = [...attributePaths];
+      renderAttributeCards(filteredAttributes);
+      updateResultsCount(filteredAttributes.length);
+    }
+    
+    function renderAttributeCards(attributes) {
+      const container = document.getElementById('attributes-cards');
+      container.innerHTML = '';
       
-      // Categorize attributes
-      const categories = {
-        root: { label: "🏠 Root Level", items: [] },
-        primitives: { label: "📝 Primitive Values", items: [] },
-        objects: { label: "📦 Objects", items: [] },
-        arrays: { label: "📋 Arrays", items: [] },
-        arrayItems: { label: "🔢 Array Items", items: [] },
-        nested: { label: "🌲 Nested Properties", items: [] }
-      };
+      if (attributes.length === 0) {
+        container.innerHTML = `
+          <div style="padding: 40px; text-align: center; color: #666; font-size: 12px;">
+            No attributes match your search criteria
+          </div>
+        `;
+        return;
+      }
       
-      attributePaths.forEach((attr, index) => {
-        const item = { attr, index };
+      attributes.forEach((attr, index) => {
+        const card = document.createElement('div');
+        card.className = 'attribute-card';
+        card.dataset.index = attributePaths.indexOf(attr);
+        card.dataset.type = attr.type;
+        card.dataset.category = getCategoryForAttribute(attr);
         
-        // Categorize based on path and type
-        if (!attr.path.includes('.') && !attr.path.includes('[')) {
-          // Root level properties
-          categories.root.items.push(item);
-        } else if (attr.path.includes('[') && !attr.path.includes('.', attr.path.lastIndexOf('['))) {
-          // Direct array items like "skills[0]"
-          categories.arrayItems.items.push(item);
-        } else if (attr.type === 'object') {
-          categories.objects.items.push(item);
-        } else if (attr.type === 'array') {
-          categories.arrays.items.push(item);
-        } else if (attr.path.includes('.') || attr.path.includes('[')) {
-          // Nested properties
-          categories.nested.items.push(item);
-        } else {
-          // Primitive values at root
-          categories.primitives.items.push(item);
-        }
+        const categoryLabel = getCategoryLabel(getCategoryForAttribute(attr));
+        const truncatedValue = JSON.stringify(attr.value).length > 80 
+          ? JSON.stringify(attr.value).substring(0, 80) + '...'
+          : JSON.stringify(attr.value);
+        
+        card.innerHTML = `
+          <div class="card-header">
+            <div class="card-category">${categoryLabel}</div>
+            <div class="card-type type-${attr.type}">${attr.type}</div>
+          </div>
+          <div class="card-path">${attr.path}</div>
+          <div class="card-value">${truncatedValue}</div>
+        `;
+        
+        card.addEventListener('click', () => selectAttribute(attr, card));
+        container.appendChild(card);
+      });
+    }
+    
+    function getCategoryForAttribute(attr) {
+      if (!attr.path.includes('.') && !attr.path.includes('[')) {
+        return 'root';
+      } else if (attr.path.includes('[') && !attr.path.includes('.', attr.path.lastIndexOf('['))) {
+        return 'arrays';
+      } else if (attr.path.includes('.') || attr.path.includes('[')) {
+        return 'nested';
+      } else {
+        return 'primitives';
+      }
+    }
+    
+    function getCategoryLabel(category) {
+      const labels = {
+        root: 'ROOT LEVEL',
+        nested: 'NESTED',
+        arrays: 'ARRAY ITEM', 
+        primitives: 'PRIMITIVE'
+      };
+      return labels[category] || category.toUpperCase();
+    }
+    
+    function selectAttribute(attr, cardElement) {
+      // Remove previous selection
+      document.querySelectorAll('.attribute-card').forEach(card => {
+        card.classList.remove('selected');
       });
       
-      // Add categories to dropdown
-      Object.values(categories).forEach(category => {
-        if (category.items.length > 0) {
-          const optgroup = document.createElement('optgroup');
-          optgroup.label = `${category.label} (${category.items.length})`;
-          
-          // Sort items within each category
-          category.items.sort((a, b) => a.attr.path.localeCompare(b.attr.path));
-          
-          category.items.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.index;
-            
-            // Format the option text based on category
-            let displayText = item.attr.path;
-            if (category === categories.root || category === categories.primitives) {
-              displayText = `${item.attr.path} = ${JSON.stringify(item.attr.value)}`;
-            } else {
-              displayText = `${item.attr.path} (${item.attr.type})`;
-            }
-            
-            option.textContent = displayText;
-            optgroup.appendChild(option);
-          });
-          
-          select.appendChild(optgroup);
-        }
-      });
+      // Add selection to clicked card
+      cardElement.classList.add('selected');
+      
+      // Update selected attribute
+      selectedAttribute = attr;
+      
+      // Update selected attribute info
+      document.getElementById('selected-path').textContent = attr.path;
+      document.getElementById('selected-val').textContent = JSON.stringify(attr.value);
+      document.getElementById('selected-typ').textContent = attr.type;
+      document.getElementById('selected-attribute-card').style.display = 'block';
+      
+      // Show mapping section
+      document.getElementById('mapping-section').style.display = 'block';
+      
+      // Request current layer selection from plugin
+      parent.postMessage({ 
+        pluginMessage: { 
+          type: 'get-selection'
+        } 
+      }, '*');
+      
+      // Update mapping preview
+      updateMappingPreview();
+    }
+    
+    function updateResultsCount(count) {
+      document.getElementById('results-count').textContent = `${count} result${count !== 1 ? 's' : ''}`;
     }
 
     // Listen for messages from the plugin code
@@ -549,38 +732,35 @@
       }
     };
 
-    // Attribute selection handler
-    document.getElementById('attribute-select').onchange = (e) => {
-      const selectedIndex = e.target.value;
-      const infoDiv = document.getElementById('attribute-info');
-      const mappingSection = document.getElementById('mapping-section');
+    // Search and filter functionality
+    function filterAttributes() {
+      const searchTerm = document.getElementById('attribute-search').value.toLowerCase();
+      const typeFilter = document.getElementById('type-filter').value;
+      const categoryFilter = document.getElementById('category-filter').value;
       
-      if (selectedIndex === '') {
-        infoDiv.style.display = 'none';
-        mappingSection.style.display = 'none';
-        selectedAttribute = null;
-        return;
-      }
+      filteredAttributes = attributePaths.filter(attr => {
+        // Search filter
+        const matchesSearch = !searchTerm || 
+          attr.path.toLowerCase().includes(searchTerm) ||
+          JSON.stringify(attr.value).toLowerCase().includes(searchTerm);
+        
+        // Type filter
+        const matchesType = !typeFilter || attr.type === typeFilter;
+        
+        // Category filter
+        const matchesCategory = !categoryFilter || getCategoryForAttribute(attr) === categoryFilter;
+        
+        return matchesSearch && matchesType && matchesCategory;
+      });
       
-      selectedAttribute = attributePaths[selectedIndex];
-      
-      document.getElementById('selected-attribute').textContent = selectedAttribute.path;
-      document.getElementById('selected-value').textContent = JSON.stringify(selectedAttribute.value);
-      document.getElementById('selected-type').textContent = selectedAttribute.type;
-      
-      infoDiv.style.display = 'block';
-      mappingSection.style.display = 'block';
-      
-      // Request current layer selection from plugin
-      parent.postMessage({ 
-        pluginMessage: { 
-          type: 'get-selection'
-        } 
-      }, '*');
-      
-      // Update mapping preview
-      updateMappingPreview();
-    };
+      renderAttributeCards(filteredAttributes);
+      updateResultsCount(filteredAttributes.length);
+    }
+    
+    // Add event listeners for search and filters
+    document.getElementById('attribute-search').addEventListener('input', filterAttributes);
+    document.getElementById('type-filter').addEventListener('change', filterAttributes);
+    document.getElementById('category-filter').addEventListener('change', filterAttributes);
 
     // Property selection handler
     document.getElementById('property-select').onchange = () => {
