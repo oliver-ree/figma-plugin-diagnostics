@@ -966,6 +966,102 @@
       border-color: #ffeaa7;
       color: #8a6d3b;
     }
+    
+    /* Attribute Chips Styles */
+    .attributes-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0;
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 2px;
+    }
+    
+    .attribute-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #f8f9fa;
+      border: 1px solid #e1e5e9;
+      border-radius: 16px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #333;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+      max-width: 200px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .attribute-chip:hover {
+      background: #e3f2fd;
+      border-color: #18a0fb;
+      color: #0d47a1;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(24, 160, 251, 0.2);
+    }
+    
+    .attribute-chip.applied {
+      background: #e8f5e8;
+      border-color: #28a745;
+      color: #155724;
+    }
+    
+    .attribute-chip.applied:hover {
+      background: #d4edda;
+      border-color: #1e7e34;
+    }
+    
+    .chip-type-badge {
+      background: rgba(255,255,255,0.8);
+      padding: 1px 5px;
+      border-radius: 8px;
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .chip-count-badge {
+      background: #6c757d;
+      color: white;
+      padding: 1px 4px;
+      border-radius: 6px;
+      font-size: 8px;
+      font-weight: 600;
+      margin-left: 2px;
+    }
+    
+    .chip-type-string { color: #28a745; }
+    .chip-type-number { color: #fd7e14; }
+    .chip-type-boolean { color: #6f42c1; }
+    .chip-type-object { color: #6c757d; }
+    .chip-type-array { color: #20c997; }
+    
+    .chip-value {
+      font-weight: normal;
+      opacity: 0.8;
+      font-size: 10px;
+    }
+    
+    /* Empty state for chips */
+    .chips-empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+      font-size: 14px;
+    }
+    
+    .chips-empty-state .emoji {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
   </style>
 </head>
 <body>
@@ -991,48 +1087,29 @@
       <button id="apply-json">Apply JSON</button>
     </div>
     
-    <!-- Attributes Exploration Section -->
+    <!-- Attributes Collection Section -->
     <div class="section attributes-section" id="attributes-section">
-      <!-- Search and Filters -->
-      <div class="search-controls">
-        <div class="search-box">
-          <input type="text" id="attribute-search" placeholder="Search attributes..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px;">
-        </div>
-        <div class="filter-controls" style="display: flex; gap: 8px; margin-top: 8px; align-items: center;">
-          <select id="type-filter" style="padding: 6px 8px; font-size: 11px; border: 1px solid #ddd; border-radius: 4px;">
-            <option value="">All Types</option>
-            <option value="string">String</option>
-            <option value="number">Number</option>
-            <option value="boolean">Boolean</option>
-            <option value="object">Object</option>
-            <option value="array">Array</option>
-          </select>
-          <select id="category-filter" style="padding: 6px 8px; font-size: 11px; border: 1px solid #ddd; border-radius: 4px;">
-            <option value="">All Categories</option>
-            <option value="root">Root Level</option>
-            <option value="nested">Nested</option>
-            <option value="arrays">Arrays</option>
-            <option value="primitives">Primitives</option>
-          </select>
-          <div style="margin-left: auto; font-size: 11px; color: #666;">
-            <span id="results-count">0 results</span>
-          </div>
-        </div>
+      <div class="section-header">
+        <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #333; display: flex; align-items: center; gap: 8px;">
+          <span>🏷️</span> JSON Attributes
+          <span id="chip-count" style="font-size: 12px; color: #666; font-weight: normal;"></span>
+        </h3>
+        <p style="margin: 0 0 16px 0; font-size: 12px; color: #666;">Click any attribute to apply it to your selected layer</p>
       </div>
       
-      <!-- Attributes Cards -->
-      <div id="attributes-cards" class="attributes-cards" style="margin-top: 16px;">
-        <!-- Cards will be populated here -->
+      <!-- Chips Container -->
+      <div id="attributes-chips" class="attributes-chips">
+        <!-- Attribute chips will be populated here -->
       </div>
       
-      <!-- Selected Attribute Info -->
-      <div id="selected-attribute-card" style="display: none; margin-top: 16px; padding: 12px; background: #e8f4fd; border-radius: 8px; border-left: 4px solid #18a0fb;">
-        <div style="font-weight: 600; font-size: 12px; color: #333; margin-bottom: 8px;">✅ Selected Attribute</div>
-        <div style="font-size: 11px; color: #666;">
-          <strong>Path:</strong> <span id="selected-path"></span><br>
-          <strong>Value:</strong> <span id="selected-val"></span><br>
-          <strong>Type:</strong> <span id="selected-typ"></span>
-        </div>
+      <!-- Quick Search -->
+      <div class="chip-search" style="margin-top: 16px;">
+        <input 
+          type="text" 
+          id="chip-search" 
+          placeholder="🔍 Quick search attributes..." 
+          style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 12px;"
+        >
       </div>
     </div>
 
@@ -1296,8 +1373,8 @@
           </div>
         `;
         
-        // Populate the cards
-        populateAttributeCards();
+        // Populate the chips
+        populateAttributeChips();
         
         // Show the attributes section
         attributesSection.classList.add('show');
@@ -1309,214 +1386,178 @@
     };
 
     let filteredAttributes = [];
+    let appliedChip = null;
     
-    function populateAttributeCards() {
+    function populateAttributeChips() {
       filteredAttributes = [...attributePaths];
-      renderAttributeCards(filteredAttributes);
-      updateResultsCount(getDisplayCardCount(filteredAttributes));
+      renderAttributeChips(filteredAttributes);
+      
+      // Count unique properties after grouping
+      const leafAttributes = filteredAttributes.filter(attr => 
+        typeof attr.value !== 'object' || attr.value === null
+      );
+      const uniqueAttributes = groupAttributesByProperty(leafAttributes);
+      updateChipCount(uniqueAttributes.length);
     }
     
-    function renderAttributeCards(attributes) {
-      const container = document.getElementById('attributes-cards');
+    function renderAttributeChips(attributes) {
+      const container = document.getElementById('attributes-chips');
       container.innerHTML = '';
       
       if (attributes.length === 0) {
         container.innerHTML = `
-          <div style="padding: 40px; text-align: center; color: #666; font-size: 12px;">
-            No attributes match your search criteria
+          <div class="chips-empty-state">
+            <div class="emoji">🏷️</div>
+            <div>No attributes found in your JSON</div>
           </div>
         `;
         return;
       }
       
-      // Group array items together
-      const groupedAttributes = groupArrayItems(attributes);
+      // Filter to only show leaf values (actual data, not objects/arrays)
+      const leafAttributes = attributes.filter(attr => 
+        typeof attr.value !== 'object' || attr.value === null
+      );
       
-      groupedAttributes.forEach((group) => {
-        if (group.isArrayGroup) {
-          renderArrayGroupCard(group, container);
-        } else {
-          renderSingleAttributeCard(group.attr, container);
-        }
+      // Group attributes by property name to avoid duplicates
+      const uniqueAttributes = groupAttributesByProperty(leafAttributes);
+      
+      uniqueAttributes.forEach(attrGroup => {
+        const chip = createAttributeChip(attrGroup);
+        container.appendChild(chip);
       });
     }
     
-    function groupArrayItems(attributes) {
-      const groups = [];
-      const arrayGroups = {};
+    function groupAttributesByProperty(attributes) {
+      const propertyGroups = {};
       
       attributes.forEach(attr => {
-        // Check if this is an array item (e.g., biomarkers[0].name)
-        const arrayMatch = attr.path.match(/^([^[\]]+)\[(\d+)\]/);
+        // Extract the property name (last part of path, without array indices)
+        const propertyName = attr.path.split('.').pop().replace(/\[\d+\]/, '');
         
-        if (arrayMatch) {
-          const arrayName = arrayMatch[1];
-          const index = arrayMatch[2];
-          const groupKey = `${arrayName}[${index}]`;
-          
-          if (!arrayGroups[groupKey]) {
-            arrayGroups[groupKey] = {
-              isArrayGroup: true,
-              arrayName: arrayName,
-              index: index,
-              basePath: groupKey,
-              attributes: []
-            };
-          }
-          
-          arrayGroups[groupKey].attributes.push(attr);
-        } else {
-          // Regular attribute, not in an array
-          groups.push({
-            isArrayGroup: false,
-            attr: attr
-          });
+        if (!propertyGroups[propertyName]) {
+          propertyGroups[propertyName] = {
+            propertyName: propertyName,
+            instances: [],
+            sampleValue: attr.value,
+            type: attr.type,
+            paths: []
+          };
         }
+        
+        propertyGroups[propertyName].instances.push(attr);
+        propertyGroups[propertyName].paths.push(attr.path);
       });
       
-      // Add array groups to main groups
-      Object.values(arrayGroups).forEach(group => {
-        groups.push(group);
-      });
-      
-      return groups;
+      // Convert to array and sort by property name
+      return Object.values(propertyGroups)
+        .sort((a, b) => a.propertyName.localeCompare(b.propertyName));
     }
     
-    function renderArrayGroupCard(group, container) {
-      const card = document.createElement('div');
-      card.className = 'attribute-card array-group-card';
-      card.dataset.category = 'arrays';
-      card.dataset.type = 'object';
+    function createAttributeChip(attrGroup) {
+      const chip = document.createElement('div');
+      chip.className = 'attribute-chip';
       
-      // Find the main object value for this array item
-      const mainObject = attributePaths.find(attr => attr.path === group.basePath);
-      const objectValue = mainObject ? mainObject.value : {};
+      // Use the first instance as the representative
+      const firstInstance = attrGroup.instances[0];
+      chip.dataset.path = firstInstance.path;
+      chip.dataset.type = attrGroup.type;
+      chip.dataset.value = JSON.stringify(attrGroup.sampleValue);
       
-      card.innerHTML = `
-        <div class="card-header">
-          <div class="card-category">ARRAY ITEM</div>
-          <div class="card-type type-object">object</div>
-        </div>
-        <div class="card-path">${group.basePath}</div>
-        <div class="array-properties">
-          ${group.attributes.map(attr => {
-            const propertyName = attr.path.replace(group.basePath + '.', '');
-            return `
-              <div class="array-property" data-attr-index="${attributePaths.indexOf(attr)}">
-                <span class="property-name">${propertyName}:</span>
-                <span class="property-value">${JSON.stringify(attr.value)}</span>
-              </div>
-            `;
-          }).join('')}
-        </div>
+      // Truncate long values
+      const displayValue = typeof attrGroup.sampleValue === 'string' && attrGroup.sampleValue.length > 25 
+        ? attrGroup.sampleValue.substring(0, 25) + '...' 
+        : String(attrGroup.sampleValue);
+      
+      // Show count if there are multiple instances
+      const countBadge = attrGroup.instances.length > 1 
+        ? `<span class="chip-count-badge">×${attrGroup.instances.length}</span>` 
+        : '';
+      
+      chip.innerHTML = `
+        <span class="chip-path">${attrGroup.propertyName}</span>
+        <span class="chip-type-badge chip-type-${attrGroup.type}">${attrGroup.type}</span>
+        ${countBadge}
+        <span class="chip-value">${displayValue}</span>
       `;
       
-      // Add click handlers for individual properties
-      card.querySelectorAll('.array-property').forEach(propElement => {
-        propElement.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const attrIndex = propElement.dataset.attrIndex;
-          const attr = attributePaths[attrIndex];
-          selectAttribute(attr, card);
-          
-          // Highlight the selected property
-          card.querySelectorAll('.array-property').forEach(p => p.classList.remove('selected'));
-          propElement.classList.add('selected');
-        });
+      // Add click handler
+      chip.addEventListener('click', () => {
+        handleChipClick(firstInstance, chip);
       });
       
-      container.appendChild(card);
+      return chip;
     }
     
-    function renderSingleAttributeCard(attr, container) {
-      const card = document.createElement('div');
-      card.className = 'attribute-card';
-      card.dataset.index = attributePaths.indexOf(attr);
-      card.dataset.type = attr.type;
-      card.dataset.category = getCategoryForAttribute(attr);
-      
-      const categoryLabel = getCategoryLabel(getCategoryForAttribute(attr));
-      const truncatedValue = JSON.stringify(attr.value).length > 80 
-        ? JSON.stringify(attr.value).substring(0, 80) + '...'
-        : JSON.stringify(attr.value);
-      
-      card.innerHTML = `
-        <div class="card-header">
-          <div class="card-category">${categoryLabel}</div>
-          <div class="card-type type-${attr.type}">${attr.type}</div>
-        </div>
-        <div class="card-path">${attr.path}</div>
-        <div class="card-value">${truncatedValue}</div>
-      `;
-      
-      card.addEventListener('click', () => selectAttribute(attr, card));
-      container.appendChild(card);
-    }
-    
-    function getCategoryForAttribute(attr) {
-      if (!attr.path.includes('.') && !attr.path.includes('[')) {
-        return 'root';
-      } else if (attr.path.includes('[') && !attr.path.includes('.', attr.path.lastIndexOf('['))) {
-        return 'arrays';
-      } else if (attr.path.includes('.') || attr.path.includes('[')) {
-        return 'nested';
-      } else {
-        return 'primitives';
-      }
-    }
-    
-    function getCategoryLabel(category) {
-      const labels = {
-        root: 'ROOT LEVEL',
-        nested: 'NESTED',
-        arrays: 'ARRAY ITEM', 
-        primitives: 'PRIMITIVE'
-      };
-      return labels[category] || category.toUpperCase();
-    }
-    
-    function selectAttribute(attr, cardElement) {
-      // Remove previous selection from all cards
-      document.querySelectorAll('.attribute-card').forEach(card => {
-        card.classList.remove('selected');
-      });
-      
-      // Remove previous selection from all array properties
-      document.querySelectorAll('.array-property').forEach(prop => {
-        prop.classList.remove('selected');
-      });
-      
-      // Add selection to clicked card (but not for array group cards)
-      if (!cardElement.classList.contains('array-group-card')) {
-        cardElement.classList.add('selected');
+    function handleChipClick(attr, chipElement) {
+      // Remove applied state from previous chip
+      if (appliedChip) {
+        appliedChip.classList.remove('applied');
       }
       
-      // Update selected attribute
+      // Mark this chip as applied
+      chipElement.classList.add('applied');
+      appliedChip = chipElement;
+      
+      // Auto-apply to the selected layer
+      applyAttributeToSelectedLayer(attr);
+    }
+    
+    function applyAttributeToSelectedLayer(attr) {
+      // Request current layer selection
+      parent.postMessage({
+        pluginMessage: { type: 'get-selection' }
+      }, '*');
+      
+      // Store the attribute for when we get the layer info
       selectedAttribute = attr;
-      
-      // Update selected attribute info
-      document.getElementById('selected-path').textContent = attr.path;
-      document.getElementById('selected-val').textContent = JSON.stringify(attr.value);
-      document.getElementById('selected-typ').textContent = attr.type;
-      document.getElementById('selected-attribute-card').style.display = 'block';
       
       // Show mapping section
       document.getElementById('mapping-section').style.display = 'block';
       
-      // Request current layer selection from plugin
-      parent.postMessage({ 
-        pluginMessage: { 
-          type: 'get-selection'
-        } 
-      }, '*');
+      // Auto-select text property for text layers, or first appropriate property
+      const propertySelect = document.getElementById('property-select');
+      if (attr.type === 'string') {
+        propertySelect.value = 'text';
+      } else if (attr.type === 'number') {
+        propertySelect.value = propertySelect.querySelector('option[value="width"]') ? 'width' : '';
+      }
       
-      // Update mapping preview
-      updateMappingPreview();
+      // Try to auto-apply if we have a valid property
+      if (propertySelect.value) {
+        setTimeout(() => {
+          document.getElementById('apply-mapping').click();
+        }, 100);
+      }
     }
     
-    function updateResultsCount(count) {
-      document.getElementById('results-count').textContent = `${count} result${count !== 1 ? 's' : ''}`;
+    function updateChipCount(count) {
+      document.getElementById('chip-count').textContent = `(${count} attributes)`;
     }
+    
+    // Chip search functionality
+    document.getElementById('chip-search').addEventListener('input', (e) => {
+      const searchTerm = e.target.value.toLowerCase();
+      const chips = document.querySelectorAll('.attribute-chip');
+      let visibleCount = 0;
+      
+      chips.forEach(chip => {
+        const propertyName = chip.querySelector('.chip-path').textContent.toLowerCase();
+        const value = chip.dataset.value.toLowerCase();
+        const isVisible = propertyName.includes(searchTerm) || value.includes(searchTerm);
+        
+        chip.style.display = isVisible ? 'inline-flex' : 'none';
+        if (isVisible) visibleCount++;
+      });
+      
+      updateChipCount(visibleCount);
+    });
+    
+    // Legacy functions removed - now using chip-based interface
+    
+    // Old card rendering functions removed - using chip-based interface
+    
+    // selectAttribute function removed - using chip-based interface with direct application
 
     // Listen for messages from the plugin code
     window.onmessage = (event) => {
@@ -1553,49 +1594,7 @@
       }
     };
 
-    // Search and filter functionality
-    function filterAttributes() {
-      const searchTerm = document.getElementById('attribute-search').value.toLowerCase();
-      const typeFilter = document.getElementById('type-filter').value;
-      const categoryFilter = document.getElementById('category-filter').value;
-      
-      filteredAttributes = attributePaths.filter(attr => {
-        // Search filter
-        const matchesSearch = !searchTerm || 
-          attr.path.toLowerCase().includes(searchTerm) ||
-          JSON.stringify(attr.value).toLowerCase().includes(searchTerm);
-        
-        // Type filter
-        const matchesType = !typeFilter || attr.type === typeFilter;
-        
-        // Category filter
-        let matchesCategory = true;
-        if (categoryFilter) {
-          if (categoryFilter === 'arrays') {
-            // For array filter, include both array objects and their properties
-            matchesCategory = attr.path.includes('[') || attr.type === 'array';
-          } else {
-            matchesCategory = getCategoryForAttribute(attr) === categoryFilter;
-          }
-        }
-        
-        return matchesSearch && matchesType && matchesCategory;
-      });
-      
-      renderAttributeCards(filteredAttributes);
-      updateResultsCount(getDisplayCardCount(filteredAttributes));
-    }
-    
-    // Count how many cards will be displayed (accounting for grouping)
-    function getDisplayCardCount(attributes) {
-      const groups = groupArrayItems(attributes);
-      return groups.length;
-    }
-    
-    // Add event listeners for search and filters
-    document.getElementById('attribute-search').addEventListener('input', filterAttributes);
-    document.getElementById('type-filter').addEventListener('change', filterAttributes);
-    document.getElementById('category-filter').addEventListener('change', filterAttributes);
+    // Old search/filter functionality removed - using chip-based interface with simple search
 
     // Property selection handler
     document.getElementById('property-select').onchange = () => {
