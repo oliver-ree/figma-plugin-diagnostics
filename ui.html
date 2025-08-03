@@ -690,6 +690,86 @@
       transform: none;
       box-shadow: none;
     }
+    
+    /* Saved Mappings Styles */
+    .saved-mappings-section {
+      border-top: 1px solid #e1e5e9;
+      margin-top: 20px;
+      padding-top: 16px;
+    }
+    
+    .saved-mappings-list {
+      border: 1px solid #e1e5e9;
+      border-radius: 6px;
+      background: #fafbfc;
+      min-height: 40px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    
+    .saved-mapping-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e1e5e9;
+      background: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .saved-mapping-item:hover {
+      background-color: #f8f9fa;
+    }
+    
+    .saved-mapping-item:last-child {
+      border-bottom: none;
+    }
+    
+    .saved-mapping-info {
+      flex: 1;
+      font-size: 12px;
+    }
+    
+    .saved-mapping-name {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 2px;
+    }
+    
+    .saved-mapping-details {
+      color: #666;
+      font-size: 11px;
+    }
+    
+    .saved-mapping-actions {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .saved-mapping-btn {
+      background: transparent;
+      border: 1px solid #ddd;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .saved-mapping-btn:hover {
+      background: #f8f9fa;
+    }
+    
+    .saved-mapping-btn.load {
+      color: #18a0fb;
+      border-color: #18a0fb;
+    }
+    
+    .saved-mapping-btn.delete {
+      color: #f24822;
+      border-color: #f24822;
+    }
   </style>
 </head>
 <body>
@@ -809,10 +889,19 @@
           <!-- Dynamic property mapping rows will be inserted here -->
         </div>
         
-        <!-- Save Actions -->
-        <div class="save-actions" style="margin-top: 20px; display: flex; gap: 8px; justify-content: center;">
-          <button id="save-component-mapping-tab2" disabled style="background: #18a0fb; color: white; font-weight: 500; padding: 12px 24px;">Save Component Mapping</button>
-          <button id="clear-mappings-tab2" disabled style="background: #f24822; color: white; padding: 12px 24px;">Clear Mappings</button>
+        <!-- Apply & Save Actions -->
+        <div class="save-actions">
+          <button id="apply-component-mapping-tab2" disabled style="background: #18a0fb; color: white; font-weight: 600;">Apply</button>
+          <button id="save-component-mapping-tab2" disabled style="background: #28a745; color: white; font-weight: 600;">Save Mapping</button>
+          <button id="clear-mappings-tab2" disabled style="background: #f24822; color: white;">Clear</button>
+        </div>
+        
+        <!-- Saved Mappings Section -->
+        <div id="saved-mappings-section" class="saved-mappings-section" style="display: none;">
+          <h4 style="margin: 20px 0 12px 0; font-size: 14px; color: #333;">Saved Mappings</h4>
+          <div id="saved-mappings-list" class="saved-mappings-list">
+            <!-- Saved mappings will be displayed here -->
+          </div>
         </div>
       </div>
       
@@ -858,6 +947,7 @@
       // Load components for Tab 2 when switching
       if (tabId === 'tab2') {
         requestComponentsForTab2();
+        updateSavedMappingsDisplay();
       }
       
       // Reset search filters when switching to tab 1
@@ -1641,10 +1731,12 @@
     }
     
     function updateSaveButtons() {
+      const applyButton = document.getElementById('apply-component-mapping-tab2');
       const saveButton = document.getElementById('save-component-mapping-tab2');
       const clearButton = document.getElementById('clear-mappings-tab2');
       
       const hasMappings = Object.keys(componentMappings).length > 0;
+      applyButton.disabled = !hasMappings;
       saveButton.disabled = !hasMappings;
       clearButton.disabled = !hasMappings;
     }
@@ -1660,7 +1752,128 @@
       updateSaveButtons();
     }
     
-    function saveComponentMapping() {
+    // Save mapping configuration to localStorage
+    function saveMappingToMemory() {
+      if (Object.keys(componentMappings).length === 0 || !selectedComponent) {
+        return;
+      }
+      
+      const mappingName = prompt('Enter a name for this mapping configuration:');
+      if (!mappingName || mappingName.trim() === '') {
+        return;
+      }
+      
+      const savedMappings = JSON.parse(localStorage.getItem('figma-component-mappings') || '{}');
+      
+      const mappingConfig = {
+        id: Date.now(),
+        name: mappingName.trim(),
+        componentId: selectedComponent.id,
+        componentName: selectedComponent.name,
+        mappings: componentMappings,
+        createdAt: new Date().toISOString()
+      };
+      
+      savedMappings[mappingConfig.id] = mappingConfig;
+      localStorage.setItem('figma-component-mappings', JSON.stringify(savedMappings));
+      
+      updateSavedMappingsDisplay();
+      
+      // Show success message
+      setTimeout(() => {
+        alert(`✅ Mapping "${mappingName}" saved successfully!`);
+      }, 100);
+    }
+    
+    // Load saved mappings and update display
+    function updateSavedMappingsDisplay() {
+      const savedMappings = JSON.parse(localStorage.getItem('figma-component-mappings') || '{}');
+      const savedMappingsSection = document.getElementById('saved-mappings-section');
+      const savedMappingsList = document.getElementById('saved-mappings-list');
+      
+      const mappingArray = Object.values(savedMappings);
+      
+      if (mappingArray.length === 0) {
+        savedMappingsSection.style.display = 'none';
+        return;
+      }
+      
+      savedMappingsSection.style.display = 'block';
+      
+      // Clear existing items
+      savedMappingsList.innerHTML = '';
+      
+      mappingArray.forEach(mapping => {
+        const item = document.createElement('div');
+        item.className = 'saved-mapping-item';
+        
+        const mappingCount = Object.keys(mapping.mappings).length;
+        const createdDate = new Date(mapping.createdAt).toLocaleDateString();
+        
+        item.innerHTML = `
+          <div class="saved-mapping-info">
+            <div class="saved-mapping-name">${mapping.name}</div>
+            <div class="saved-mapping-details">${mapping.componentName} • ${mappingCount} properties • ${createdDate}</div>
+          </div>
+          <div class="saved-mapping-actions">
+            <button class="saved-mapping-btn load" onclick="loadSavedMapping(${mapping.id})">Load</button>
+            <button class="saved-mapping-btn delete" onclick="deleteSavedMapping(${mapping.id})">Delete</button>
+          </div>
+        `;
+        
+        savedMappingsList.appendChild(item);
+      });
+    }
+    
+    // Load a saved mapping configuration
+    function loadSavedMapping(mappingId) {
+      const savedMappings = JSON.parse(localStorage.getItem('figma-component-mappings') || '{}');
+      const mapping = savedMappings[mappingId];
+      
+      if (!mapping) {
+        alert('❌ Mapping not found');
+        return;
+      }
+      
+      // Check if the same component is selected
+      if (!selectedComponent || selectedComponent.id !== mapping.componentId) {
+        alert(`❌ Please select the "${mapping.componentName}" component first`);
+        return;
+      }
+      
+      // Clear current mappings
+      clearAllMappings();
+      
+      // Load the saved mappings
+      componentMappings = { ...mapping.mappings };
+      
+      // Update dropdowns to reflect loaded mappings
+      Object.entries(componentMappings).forEach(([propertyName, attributeData]) => {
+        const dropdown = document.querySelector(`[data-property-original="${propertyName}"]`);
+        if (dropdown) {
+          dropdown.value = attributeData.path;
+        }
+      });
+      
+      updateSaveButtons();
+      
+      alert(`✅ Loaded mapping "${mapping.name}"`);
+    }
+    
+    // Delete a saved mapping
+    function deleteSavedMapping(mappingId) {
+      if (!confirm('Are you sure you want to delete this saved mapping?')) {
+        return;
+      }
+      
+      const savedMappings = JSON.parse(localStorage.getItem('figma-component-mappings') || '{}');
+      delete savedMappings[mappingId];
+      localStorage.setItem('figma-component-mappings', JSON.stringify(savedMappings));
+      
+      updateSavedMappingsDisplay();
+    }
+    
+    function applyComponentMapping() {
       if (Object.keys(componentMappings).length === 0 || !selectedComponent) {
         return;
       }
@@ -1736,10 +1949,16 @@
     // Tab 2 Event Handlers
     document.getElementById('component-select-tab2').onchange = (e) => {
       handleComponentSelection(e.target.value);
+      // Load saved mappings when component changes
+      updateSavedMappingsDisplay();
+    };
+    
+    document.getElementById('apply-component-mapping-tab2').onclick = () => {
+      applyComponentMapping();
     };
     
     document.getElementById('save-component-mapping-tab2').onclick = () => {
-      saveComponentMapping();
+      saveMappingToMemory();
     };
     
     document.getElementById('clear-mappings-tab2').onclick = () => {
