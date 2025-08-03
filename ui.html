@@ -293,6 +293,58 @@
       z-index: 10;
       padding-bottom: 8px;
     }
+    
+    /* Array Group Cards */
+    .array-group-card {
+      border-left: 4px solid #c2185b;
+      padding-left: 12px;
+    }
+    
+    .array-properties {
+      margin-top: 8px;
+      padding: 8px;
+      background: #fafbfc;
+      border-radius: 4px;
+      border: 1px solid #e1e5e9;
+    }
+    
+    .array-property {
+      padding: 6px 8px;
+      margin-bottom: 4px;
+      background: white;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+    
+    .array-property:last-child {
+      margin-bottom: 0;
+    }
+    
+    .array-property:hover {
+      background: #f0f8ff;
+      border-color: #18a0fb;
+    }
+    
+    .array-property.selected {
+      background: #e8f4fd;
+      border-color: #18a0fb;
+      box-shadow: 0 0 0 1px #18a0fb;
+    }
+    
+    .property-name {
+      font-weight: 600;
+      font-size: 11px;
+      color: #333;
+      margin-right: 8px;
+    }
+    
+    .property-value {
+      font-size: 11px;
+      color: #666;
+      font-family: 'Monaco', 'Menlo', monospace;
+    }
   </style>
 </head>
 <body>
@@ -616,7 +668,7 @@
     function populateAttributeCards() {
       filteredAttributes = [...attributePaths];
       renderAttributeCards(filteredAttributes);
-      updateResultsCount(filteredAttributes.length);
+      updateResultsCount(getDisplayCardCount(filteredAttributes));
     }
     
     function renderAttributeCards(attributes) {
@@ -632,30 +684,128 @@
         return;
       }
       
-      attributes.forEach((attr, index) => {
-        const card = document.createElement('div');
-        card.className = 'attribute-card';
-        card.dataset.index = attributePaths.indexOf(attr);
-        card.dataset.type = attr.type;
-        card.dataset.category = getCategoryForAttribute(attr);
-        
-        const categoryLabel = getCategoryLabel(getCategoryForAttribute(attr));
-        const truncatedValue = JSON.stringify(attr.value).length > 80 
-          ? JSON.stringify(attr.value).substring(0, 80) + '...'
-          : JSON.stringify(attr.value);
-        
-        card.innerHTML = `
-          <div class="card-header">
-            <div class="card-category">${categoryLabel}</div>
-            <div class="card-type type-${attr.type}">${attr.type}</div>
-          </div>
-          <div class="card-path">${attr.path}</div>
-          <div class="card-value">${truncatedValue}</div>
-        `;
-        
-        card.addEventListener('click', () => selectAttribute(attr, card));
-        container.appendChild(card);
+      // Group array items together
+      const groupedAttributes = groupArrayItems(attributes);
+      
+      groupedAttributes.forEach((group) => {
+        if (group.isArrayGroup) {
+          renderArrayGroupCard(group, container);
+        } else {
+          renderSingleAttributeCard(group.attr, container);
+        }
       });
+    }
+    
+    function groupArrayItems(attributes) {
+      const groups = [];
+      const arrayGroups = {};
+      
+      attributes.forEach(attr => {
+        // Check if this is an array item (e.g., biomarkers[0].name)
+        const arrayMatch = attr.path.match(/^([^[\]]+)\[(\d+)\]/);
+        
+        if (arrayMatch) {
+          const arrayName = arrayMatch[1];
+          const index = arrayMatch[2];
+          const groupKey = `${arrayName}[${index}]`;
+          
+          if (!arrayGroups[groupKey]) {
+            arrayGroups[groupKey] = {
+              isArrayGroup: true,
+              arrayName: arrayName,
+              index: index,
+              basePath: groupKey,
+              attributes: []
+            };
+          }
+          
+          arrayGroups[groupKey].attributes.push(attr);
+        } else {
+          // Regular attribute, not in an array
+          groups.push({
+            isArrayGroup: false,
+            attr: attr
+          });
+        }
+      });
+      
+      // Add array groups to main groups
+      Object.values(arrayGroups).forEach(group => {
+        groups.push(group);
+      });
+      
+      return groups;
+    }
+    
+    function renderArrayGroupCard(group, container) {
+      const card = document.createElement('div');
+      card.className = 'attribute-card array-group-card';
+      card.dataset.category = 'arrays';
+      card.dataset.type = 'object';
+      
+      // Find the main object value for this array item
+      const mainObject = attributePaths.find(attr => attr.path === group.basePath);
+      const objectValue = mainObject ? mainObject.value : {};
+      
+      card.innerHTML = `
+        <div class="card-header">
+          <div class="card-category">ARRAY ITEM</div>
+          <div class="card-type type-object">object</div>
+        </div>
+        <div class="card-path">${group.basePath}</div>
+        <div class="array-properties">
+          ${group.attributes.map(attr => {
+            const propertyName = attr.path.replace(group.basePath + '.', '');
+            return `
+              <div class="array-property" data-attr-index="${attributePaths.indexOf(attr)}">
+                <span class="property-name">${propertyName}:</span>
+                <span class="property-value">${JSON.stringify(attr.value)}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+      
+      // Add click handlers for individual properties
+      card.querySelectorAll('.array-property').forEach(propElement => {
+        propElement.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const attrIndex = propElement.dataset.attrIndex;
+          const attr = attributePaths[attrIndex];
+          selectAttribute(attr, card);
+          
+          // Highlight the selected property
+          card.querySelectorAll('.array-property').forEach(p => p.classList.remove('selected'));
+          propElement.classList.add('selected');
+        });
+      });
+      
+      container.appendChild(card);
+    }
+    
+    function renderSingleAttributeCard(attr, container) {
+      const card = document.createElement('div');
+      card.className = 'attribute-card';
+      card.dataset.index = attributePaths.indexOf(attr);
+      card.dataset.type = attr.type;
+      card.dataset.category = getCategoryForAttribute(attr);
+      
+      const categoryLabel = getCategoryLabel(getCategoryForAttribute(attr));
+      const truncatedValue = JSON.stringify(attr.value).length > 80 
+        ? JSON.stringify(attr.value).substring(0, 80) + '...'
+        : JSON.stringify(attr.value);
+      
+      card.innerHTML = `
+        <div class="card-header">
+          <div class="card-category">${categoryLabel}</div>
+          <div class="card-type type-${attr.type}">${attr.type}</div>
+        </div>
+        <div class="card-path">${attr.path}</div>
+        <div class="card-value">${truncatedValue}</div>
+      `;
+      
+      card.addEventListener('click', () => selectAttribute(attr, card));
+      container.appendChild(card);
     }
     
     function getCategoryForAttribute(attr) {
@@ -681,13 +831,20 @@
     }
     
     function selectAttribute(attr, cardElement) {
-      // Remove previous selection
+      // Remove previous selection from all cards
       document.querySelectorAll('.attribute-card').forEach(card => {
         card.classList.remove('selected');
       });
       
-      // Add selection to clicked card
-      cardElement.classList.add('selected');
+      // Remove previous selection from all array properties
+      document.querySelectorAll('.array-property').forEach(prop => {
+        prop.classList.remove('selected');
+      });
+      
+      // Add selection to clicked card (but not for array group cards)
+      if (!cardElement.classList.contains('array-group-card')) {
+        cardElement.classList.add('selected');
+      }
       
       // Update selected attribute
       selectedAttribute = attr;
@@ -748,13 +905,27 @@
         const matchesType = !typeFilter || attr.type === typeFilter;
         
         // Category filter
-        const matchesCategory = !categoryFilter || getCategoryForAttribute(attr) === categoryFilter;
+        let matchesCategory = true;
+        if (categoryFilter) {
+          if (categoryFilter === 'arrays') {
+            // For array filter, include both array objects and their properties
+            matchesCategory = attr.path.includes('[') || attr.type === 'array';
+          } else {
+            matchesCategory = getCategoryForAttribute(attr) === categoryFilter;
+          }
+        }
         
         return matchesSearch && matchesType && matchesCategory;
       });
       
       renderAttributeCards(filteredAttributes);
-      updateResultsCount(filteredAttributes.length);
+      updateResultsCount(getDisplayCardCount(filteredAttributes));
+    }
+    
+    // Count how many cards will be displayed (accounting for grouping)
+    function getDisplayCardCount(attributes) {
+      const groups = groupArrayItems(attributes);
+      return groups.length;
     }
     
     // Add event listeners for search and filters
