@@ -947,7 +947,7 @@
       // Load components for Tab 2 when switching
       if (tabId === 'tab2') {
         requestComponentsForTab2();
-        updateSavedMappingsDisplay();
+        requestSavedMappings();
       }
       
       // Reset search filters when switching to tab 1
@@ -1311,6 +1311,18 @@
       }
       if (msg.type === 'component-properties') {
         displayComponentProperties(msg.properties);
+      }
+      if (msg.type === 'saved-mappings') {
+        savedMappings = msg.mappings;
+        updateSavedMappingsDisplay();
+      }
+      if (msg.type === 'mapping-saved') {
+        alert(`✅ Mapping "${msg.name}" saved successfully!`);
+        requestSavedMappings(); // Refresh the list
+      }
+      if (msg.type === 'mapping-deleted') {
+        alert(`✅ Mapping deleted successfully!`);
+        requestSavedMappings(); // Refresh the list
       }
     };
 
@@ -1752,9 +1764,19 @@
       updateSaveButtons();
     }
     
-    // Save mapping configuration to localStorage
+    // Save mapping configuration using Figma clientStorage
     function saveMappingToMemory() {
-      if (Object.keys(componentMappings).length === 0 || !selectedComponent) {
+      console.log('Save button clicked');
+      console.log('componentMappings:', componentMappings);
+      console.log('selectedComponent:', selectedComponent);
+      
+      if (Object.keys(componentMappings).length === 0) {
+        alert('❌ No mappings to save. Please map some attributes first.');
+        return;
+      }
+      
+      if (!selectedComponent) {
+        alert('❌ No component selected. Please select a component first.');
         return;
       }
       
@@ -1762,8 +1784,6 @@
       if (!mappingName || mappingName.trim() === '') {
         return;
       }
-      
-      const savedMappings = JSON.parse(localStorage.getItem('figma-component-mappings') || '{}');
       
       const mappingConfig = {
         id: Date.now(),
@@ -1774,20 +1794,29 @@
         createdAt: new Date().toISOString()
       };
       
-      savedMappings[mappingConfig.id] = mappingConfig;
-      localStorage.setItem('figma-component-mappings', JSON.stringify(savedMappings));
-      
-      updateSavedMappingsDisplay();
-      
-      // Show success message
-      setTimeout(() => {
-        alert(`✅ Mapping "${mappingName}" saved successfully!`);
-      }, 100);
+      // Send to main plugin code to save using clientStorage
+      parent.postMessage({
+        pluginMessage: {
+          type: 'save-mapping',
+          mapping: mappingConfig
+        }
+      }, '*');
+    }
+    
+    // Global variable to store saved mappings
+    let savedMappings = {};
+    
+    // Request saved mappings from main plugin code
+    function requestSavedMappings() {
+      parent.postMessage({
+        pluginMessage: {
+          type: 'get-saved-mappings'
+        }
+      }, '*');
     }
     
     // Load saved mappings and update display
     function updateSavedMappingsDisplay() {
-      const savedMappings = JSON.parse(localStorage.getItem('figma-component-mappings') || '{}');
       const savedMappingsSection = document.getElementById('saved-mappings-section');
       const savedMappingsList = document.getElementById('saved-mappings-list');
       
@@ -1827,7 +1856,6 @@
     
     // Load a saved mapping configuration
     function loadSavedMapping(mappingId) {
-      const savedMappings = JSON.parse(localStorage.getItem('figma-component-mappings') || '{}');
       const mapping = savedMappings[mappingId];
       
       if (!mapping) {
@@ -1866,11 +1894,13 @@
         return;
       }
       
-      const savedMappings = JSON.parse(localStorage.getItem('figma-component-mappings') || '{}');
-      delete savedMappings[mappingId];
-      localStorage.setItem('figma-component-mappings', JSON.stringify(savedMappings));
-      
-      updateSavedMappingsDisplay();
+      // Send to main plugin code to delete from clientStorage
+      parent.postMessage({
+        pluginMessage: {
+          type: 'delete-mapping',
+          mappingId: mappingId
+        }
+      }, '*');
     }
     
     function applyComponentMapping() {
@@ -1950,7 +1980,7 @@
     document.getElementById('component-select-tab2').onchange = (e) => {
       handleComponentSelection(e.target.value);
       // Load saved mappings when component changes
-      updateSavedMappingsDisplay();
+      requestSavedMappings();
     };
     
     document.getElementById('apply-component-mapping-tab2').onclick = () => {

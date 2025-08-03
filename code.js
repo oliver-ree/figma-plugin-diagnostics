@@ -61,7 +61,86 @@ figma.ui.onmessage = msg => {
   if (msg.type === 'close-plugin') {
     figma.closePlugin();
   }
+  
+  if (msg.type === 'save-mapping') {
+    saveMappingToStorage(msg.mapping);
+  }
+  
+  if (msg.type === 'get-saved-mappings') {
+    getSavedMappings();
+  }
+  
+  if (msg.type === 'delete-mapping') {
+    deleteMappingFromStorage(msg.mappingId);
+  }
 };
+
+// Save mapping to Figma clientStorage
+async function saveMappingToStorage(mapping) {
+  try {
+    // Get existing mappings
+    const existingMappings = await figma.clientStorage.getAsync('component-mappings') || {};
+    
+    // Add the new mapping
+    existingMappings[mapping.id] = mapping;
+    
+    // Save back to storage
+    await figma.clientStorage.setAsync('component-mappings', existingMappings);
+    
+    // Send success message to UI
+    figma.ui.postMessage({
+      type: 'mapping-saved',
+      name: mapping.name
+    });
+    
+    console.log(`Mapping "${mapping.name}" saved successfully`);
+  } catch (error) {
+    console.error('Error saving mapping:', error);
+    figma.notify('❌ Failed to save mapping');
+  }
+}
+
+// Get saved mappings from Figma clientStorage
+async function getSavedMappings() {
+  try {
+    const savedMappings = await figma.clientStorage.getAsync('component-mappings') || {};
+    
+    // Send mappings to UI
+    figma.ui.postMessage({
+      type: 'saved-mappings',
+      mappings: savedMappings
+    });
+    
+    console.log('Sent saved mappings to UI', Object.keys(savedMappings).length, 'mappings');
+  } catch (error) {
+    console.error('Error getting saved mappings:', error);
+    figma.notify('❌ Failed to load saved mappings');
+  }
+}
+
+// Delete mapping from Figma clientStorage
+async function deleteMappingFromStorage(mappingId) {
+  try {
+    // Get existing mappings
+    const existingMappings = await figma.clientStorage.getAsync('component-mappings') || {};
+    
+    // Delete the specified mapping
+    delete existingMappings[mappingId];
+    
+    // Save back to storage
+    await figma.clientStorage.setAsync('component-mappings', existingMappings);
+    
+    // Send success message to UI
+    figma.ui.postMessage({
+      type: 'mapping-deleted'
+    });
+    
+    console.log(`Mapping ${mappingId} deleted successfully`);
+  } catch (error) {
+    console.error('Error deleting mapping:', error);
+    figma.notify('❌ Failed to delete mapping');
+  }
+}
 
 // Function to create a text node with the selected attribute
 async function createTextNodeWithAttribute() {
