@@ -2013,12 +2013,26 @@
       }
       
       const defaultName = selectedComponent.name;
-      const mappingName = prompt('Enter a name for this mapping configuration:', defaultName);
-      console.log('User entered mapping name:', mappingName);
-      if (!mappingName || mappingName.trim() === '') {
-        console.log('User canceled or entered empty name');
-        return;
+      let mappingName = null;
+      
+      // Try using prompt, but fall back to a default name if it fails
+      try {
+        mappingName = prompt('Enter a name for this mapping configuration:', defaultName);
+        console.log('User entered mapping name:', mappingName);
+        
+        if (mappingName === null) {
+          console.log('User canceled prompt - using default name');
+          mappingName = defaultName;
+        } else if (mappingName.trim() === '') {
+          console.log('User entered empty name - using default name');
+          mappingName = defaultName;
+        }
+      } catch (error) {
+        console.log('Prompt failed - using default name:', error);
+        mappingName = defaultName;
       }
+      
+      console.log('Final mapping name:', mappingName);
       
       const mappingConfig = {
         id: Date.now(),
