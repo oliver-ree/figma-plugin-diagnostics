@@ -345,6 +345,336 @@
       color: #666;
       font-family: 'Monaco', 'Menlo', monospace;
     }
+    
+    /* Tab 2 Three Column Layout */
+    .mapping-layout {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      min-height: 300px;
+    }
+    
+    .mapping-column {
+      flex: 1;
+      background: #fafbfc;
+      border: 1px solid #e1e5e9;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    
+    .column-title {
+      margin: 0 0 4px 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .column-subtitle {
+      margin: 0 0 12px 0;
+      font-size: 11px;
+      color: #666;
+    }
+    
+    .mapping-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 40px;
+      width: 40px;
+    }
+    
+    .arrow-container {
+      width: 32px;
+      height: 32px;
+      background: #18a0fb;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .arrow {
+      font-size: 16px;
+      color: white;
+      font-weight: bold;
+    }
+    
+    .attributes-list, .properties-list {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #e1e5e9;
+      border-radius: 6px;
+      background: white;
+    }
+    
+    .empty-state {
+      padding: 20px;
+      text-align: center;
+      color: #999;
+      font-size: 11px;
+      font-style: italic;
+    }
+    
+    .attribute-item, .property-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .attribute-item:last-child, .property-item:last-child {
+      border-bottom: none;
+    }
+    
+    .attribute-item:hover, .property-item:hover {
+      background: #f8f9fa;
+    }
+    
+    .attribute-item.selected, .property-item.selected {
+      background: #e8f4fd;
+      border-left: 3px solid #18a0fb;
+    }
+    
+    .item-name {
+      font-weight: 600;
+      font-size: 11px;
+      color: #333;
+      font-family: 'Monaco', 'Menlo', monospace;
+    }
+    
+    .item-type {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 500;
+      margin-left: 8px;
+    }
+    
+    .item-value {
+      font-size: 10px;
+      color: #666;
+      margin-top: 2px;
+      font-family: 'Monaco', 'Menlo', monospace;
+    }
+    
+    .component-selection {
+      margin-bottom: 12px;
+    }
+    
+    .component-selection label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #666;
+    }
+    
+    .compact-select {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 11px;
+      background: white;
+    }
+    
+    .mapping-actions {
+      border-top: 1px solid #e1e5e9;
+      padding-top: 16px;
+    }
+    
+    /* Mapping Queue Styles */
+    .mapping-queue-section {
+      border-top: 1px solid #e1e5e9;
+      margin-top: 16px;
+      padding-top: 16px;
+    }
+    
+    .mapping-queue {
+      border: 1px solid #e1e5e9;
+      border-radius: 6px;
+      background: #fafbfc;
+      min-height: 60px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .empty-queue {
+      padding: 20px;
+      text-align: center;
+      color: #999;
+      font-size: 12px;
+      font-style: italic;
+    }
+    
+    .queue-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e1e5e9;
+      background: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+    }
+    
+    .queue-item:last-child {
+      border-bottom: none;
+    }
+    
+    .queue-mapping-text {
+      flex: 1;
+      color: #333;
+    }
+    
+    .queue-remove-btn {
+      background: #f24822;
+      color: white;
+      border: none;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    
+    .queue-remove-btn:hover {
+      opacity: 0.8;
+    }
+    
+    /* New Component-First Layout */
+    .component-selection-section {
+      margin-bottom: 20px;
+      padding: 20px;
+      background: #fafbfc;
+      border: 1px solid #e1e5e9;
+      border-radius: 12px;
+    }
+    
+    .component-selection {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+    }
+    
+    .full-width-select {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+      font-weight: 500;
+    }
+    
+    .property-mapping-section {
+      padding: 20px;
+      background: #fafbfc;
+      border: 1px solid #e1e5e9;
+      border-radius: 12px;
+    }
+    
+    .property-mappings-list {
+      background: white;
+      border: 1px solid #e1e5e9;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    
+    .property-mapping-row {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e1e5e9;
+      gap: 20px;
+      transition: background-color 0.2s;
+    }
+    
+    .property-mapping-row:hover {
+      background-color: #f8f9fa;
+    }
+    
+    .property-mapping-row:last-child {
+      border-bottom: none;
+    }
+    
+    .property-info {
+      flex: 0 0 140px;
+      min-width: 0;
+    }
+    
+    .property-name {
+      font-weight: 600;
+      color: #333;
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+    
+    .property-type {
+      font-size: 11px;
+      color: #18a0fb;
+      text-transform: uppercase;
+      font-weight: 600;
+      background: #e8f4fd;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    
+    .property-arrow {
+      color: #18a0fb;
+      font-size: 18px;
+      font-weight: bold;
+      user-select: none;
+      flex: 0 0 auto;
+    }
+    
+    .attribute-select {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 12px;
+      border: 2px solid #e1e5e9;
+      border-radius: 8px;
+      font-size: 13px;
+      background: white;
+      font-weight: 500;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    
+    .attribute-select:focus {
+      outline: none;
+      border-color: #18a0fb;
+      box-shadow: 0 0 0 3px rgba(24, 160, 251, 0.1);
+    }
+    
+    .save-actions {
+      margin-top: 24px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    
+    .save-actions button {
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 14px 28px;
+    }
+    
+    .save-actions button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .save-actions button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
   </style>
 </head>
 <body>
@@ -447,45 +777,34 @@
     
     <!-- Tab 2: Component Property Mapping -->
     <div class="tab-content" id="tab2">
-      <!-- Dataset Section -->
-      <div class="section">
-        <label>Dataset to link</label>
-        <p style="font-size: 11px; color: #666; margin: 0 0 12px 0;">Search for the dataset source to use for this link</p>
-        <select id="component-attribute-select">
-          <option value="">Select an attribute</option>
-        </select>
-        <div id="component-attribute-info" style="margin-top: 12px; padding: 8px; background: #f8f9fa; border-radius: 4px; font-size: 11px; display: none;">
-          <strong>Selected:</strong> <span id="comp-selected-attribute"></span><br>
-          <strong>Value:</strong> <span id="comp-selected-value"></span><br>
-          <strong>Type:</strong> <span id="comp-selected-type"></span>
+      <!-- Component Selection -->
+      <div class="component-selection-section">
+        <h3 style="margin: 0 0 8px 0; font-size: 16px; color: #333;">1. Select Component</h3>
+        <div class="component-selection">
+          <select id="component-select-tab2" class="full-width-select">
+            <option value="">Choose a component...</option>
+          </select>
+          <button id="refresh-components-tab2" style="background: #666; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;">Refresh</button>
         </div>
       </div>
       
-      <!-- Figma Target Section -->
-      <div class="section" id="component-mapping-section" style="display: none;">
-        <label>Figma target</label>
-        <p style="font-size: 11px; color: #666; margin: 0 0 12px 0;">Set the target action for apply</p>
-        
-        <div class="target-selection">
-          <label for="component-select">Component</label>
-          <select id="component-select">
-            <option value="">Select component...</option>
-          </select>
+      <!-- Property Mapping Section -->
+      <div id="property-mapping-section" class="property-mapping-section" style="display: none;">
+        <h3 style="margin: 24px 0 12px 0; font-size: 16px; color: #333;">2. Map Properties to Attributes</h3>
+        <div id="property-mappings-list" class="property-mappings-list">
+          <!-- Dynamic property mapping rows will be inserted here -->
         </div>
         
-        <div class="target-selection" style="margin-top: 12px;">
-          <label for="component-property-select">Property</label>
-          <select id="component-property-select">
-            <option value="">Select property...</option>
-          </select>
+        <!-- Save Actions -->
+        <div class="save-actions" style="margin-top: 20px; display: flex; gap: 8px; justify-content: center;">
+          <button id="save-component-mapping-tab2" disabled style="background: #18a0fb; color: white; font-weight: 500; padding: 12px 24px;">Save Component Mapping</button>
+          <button id="clear-mappings-tab2" disabled style="background: #f24822; color: white; padding: 12px 24px;">Clear Mappings</button>
         </div>
-        
-        <div id="component-mapping-preview" style="display: none; margin: 12px 0; padding: 8px; background: #fff3cd; border-radius: 4px; font-size: 11px;">
-          <strong>Preview:</strong> <span id="component-preview-text"></span>
-        </div>
-        
-        <button id="apply-component-mapping" disabled>Apply Component Mapping</button>
-        <button id="refresh-components" style="background: #666; margin-top: 8px;">Refresh Components</button>
+      </div>
+      
+      <!-- Empty State -->
+      <div id="tab2-empty-state" class="empty-state" style="margin: 40px 0; text-align: center; color: #999;">
+        <p>Load JSON data in Tab 1, then select a component above to begin mapping.</p>
       </div>
     </div>
   </div>
@@ -497,6 +816,9 @@
     let currentLayer = null;
     let componentSelectedAttribute = null;
     let availableComponents = [];
+    let componentSelectedProperty = null;
+    let mappingQueue = [];
+    let selectedComponentId = null;
 
     // Tab switching functionality
     document.querySelectorAll('.tab-button').forEach(button => {
@@ -519,10 +841,9 @@
       });
       document.getElementById(tabId).classList.add('active');
       
-      // Populate component attribute dropdown when switching to tab 2
-      if (tabId === 'tab2' && attributePaths.length > 0) {
-        populateComponentAttributeDropdown();
-        requestAvailableComponents();
+      // Load components for Tab 2 when switching
+      if (tabId === 'tab2') {
+        requestComponentsForTab2();
       }
       
       // Reset search filters when switching to tab 1
@@ -882,10 +1203,10 @@
       }
       if (msg.type === 'components-list') {
         availableComponents = msg.components;
-        populateComponentsDropdown(msg.components);
+        populateTab2ComponentsDropdown(msg.components);
       }
       if (msg.type === 'component-properties') {
-        populateComponentPropertiesDropdown(msg.properties);
+        displayComponentProperties(msg.properties);
       }
     };
 
@@ -1037,69 +1358,22 @@
       applyButton.disabled = !currentLayer;
     }
 
-    // Component Tab 2 Functions
-    function populateComponentAttributeDropdown() {
-      const select = document.getElementById('component-attribute-select');
-      select.innerHTML = '<option value="">Select an attribute</option>';
-      
-      // Use the same categorization as Tab 1
-      const categories = {
-        root: { label: "🏠 Root Level", items: [] },
-        primitives: { label: "📝 Primitive Values", items: [] },
-        objects: { label: "📦 Objects", items: [] },
-        arrays: { label: "📋 Arrays", items: [] },
-        arrayItems: { label: "🔢 Array Items", items: [] },
-        nested: { label: "🌲 Nested Properties", items: [] }
-      };
-      
-      attributePaths.forEach((attr, index) => {
-        const item = { attr, index };
-        
-        if (!attr.path.includes('.') && !attr.path.includes('[')) {
-          categories.root.items.push(item);
-        } else if (attr.path.includes('[') && !attr.path.includes('.', attr.path.lastIndexOf('['))) {
-          categories.arrayItems.items.push(item);
-        } else if (attr.type === 'object') {
-          categories.objects.items.push(item);
-        } else if (attr.type === 'array') {
-          categories.arrays.items.push(item);
-        } else if (attr.path.includes('.') || attr.path.includes('[')) {
-          categories.nested.items.push(item);
-        } else {
-          categories.primitives.items.push(item);
-        }
-      });
-      
-      Object.values(categories).forEach(category => {
-        if (category.items.length > 0) {
-          const optgroup = document.createElement('optgroup');
-          optgroup.label = `${category.label} (${category.items.length})`;
-          
-          category.items.sort((a, b) => a.attr.path.localeCompare(b.attr.path));
-          
-          category.items.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.index;
-            option.textContent = `${item.attr.path} (${item.attr.type})`;
-            optgroup.appendChild(option);
-          });
-          
-          select.appendChild(optgroup);
-        }
-      });
-    }
-
-    function requestAvailableComponents() {
+    // Tab 2 Component-First Functions
+    let selectedComponent = null;
+    let componentProperties = [];
+    let componentMappings = {};
+    
+    function requestComponentsForTab2() {
       parent.postMessage({ 
         pluginMessage: { 
           type: 'get-components'
         } 
       }, '*');
     }
-
-    function populateComponentsDropdown(components) {
-      const select = document.getElementById('component-select');
-      select.innerHTML = '<option value="">Select component...</option>';
+    
+    function populateTab2ComponentsDropdown(components) {
+      const select = document.getElementById('component-select-tab2');
+      select.innerHTML = '<option value="">Choose a component...</option>';
       
       components.forEach(component => {
         const option = document.createElement('option');
@@ -1108,105 +1382,175 @@
         select.appendChild(option);
       });
     }
-
-    function populateComponentPropertiesDropdown(properties) {
-      const select = document.getElementById('component-property-select');
-      select.innerHTML = '<option value="">Select property...</option>';
+    
+    function handleComponentSelection(componentId) {
+      if (!componentId) {
+        hidePropertyMappingSection();
+        return;
+      }
       
-      properties.forEach(property => {
-        const option = document.createElement('option');
-        option.value = property.name;
-        option.textContent = property.name;
-        select.appendChild(option);
+      // Find selected component
+      selectedComponent = availableComponents.find(comp => comp.id === componentId);
+      if (!selectedComponent) return;
+      
+      // Clear previous mappings
+      componentMappings = {};
+      
+      // Request properties for this component
+      parent.postMessage({ 
+        pluginMessage: { 
+          type: 'get-component-properties',
+          componentId: componentId
+        } 
+      }, '*');
+    }
+    
+    function displayComponentProperties(properties) {
+      // Filter to only show actual component properties, not text layers
+      componentProperties = properties.filter(prop => !prop.name.startsWith('text:'));
+      
+      if (componentProperties.length === 0) {
+        hidePropertyMappingSection();
+        return;
+      }
+      
+      showPropertyMappingSection();
+      renderPropertyMappingRows();
+    }
+    
+    function showPropertyMappingSection() {
+      document.getElementById('property-mapping-section').style.display = 'block';
+      document.getElementById('tab2-empty-state').style.display = 'none';
+    }
+    
+    function hidePropertyMappingSection() {
+      document.getElementById('property-mapping-section').style.display = 'none';
+      document.getElementById('tab2-empty-state').style.display = 'block';
+    }
+    
+    function renderPropertyMappingRows() {
+      const container = document.getElementById('property-mappings-list');
+      container.innerHTML = '';
+      
+      componentProperties.forEach((property, index) => {
+        const row = document.createElement('div');
+        row.className = 'property-mapping-row';
+        
+        // Create attribute dropdown options
+        const attributeOptions = [
+          '<option value="">Choose attribute...</option>',
+          ...attributePaths.map(attr => 
+            `<option value="${attr.path}">${attr.path} (${JSON.stringify(attr.value)})</option>`
+          )
+        ].join('');
+        
+        row.innerHTML = `
+          <div class="property-info">
+            <div class="property-name">${property.name}</div>
+            <div class="property-type">${property.type}</div>
+          </div>
+          <div class="property-arrow">→</div>
+          <select class="attribute-select" data-property-name="${property.originalName || property.name}" data-property-original="${property.originalName || property.name}" data-property-display="${property.name}" data-property-type="${property.type}">
+            ${attributeOptions}
+          </select>
+        `;
+        
+        // Add event listener for dropdown changes
+        const select = row.querySelector('.attribute-select');
+        select.addEventListener('change', (e) => {
+          const originalName = e.target.dataset.propertyOriginal;
+          const displayName = e.target.dataset.propertyDisplay;
+          handleAttributeSelection(originalName, displayName, e.target.value);
+        });
+        
+        container.appendChild(row);
       });
+      
+      updateSaveButtons();
     }
-
-    function updateComponentMappingPreview() {
-      const previewDiv = document.getElementById('component-mapping-preview');
-      const previewText = document.getElementById('component-preview-text');
-      const componentSelect = document.getElementById('component-select');
-      const propertySelect = document.getElementById('component-property-select');
-      
-      if (!componentSelectedAttribute || !componentSelect.value || !propertySelect.value) {
-        previewDiv.style.display = 'none';
-        return;
+    
+    function handleAttributeSelection(originalPropertyName, displayPropertyName, attributePath) {
+      if (attributePath) {
+        // Find the attribute object
+        const attribute = attributePaths.find(attr => attr.path === attributePath);
+        if (attribute) {
+          // Store using original name for backend, but keep display name for reference
+          componentMappings[originalPropertyName] = {
+            ...attribute,
+            displayPropertyName: displayPropertyName
+          };
+        }
+      } else {
+        // Remove mapping if no attribute selected
+        delete componentMappings[originalPropertyName];
       }
       
-      const componentName = componentSelect.options[componentSelect.selectedIndex].text;
-      const propertyName = propertySelect.value;
-      const value = componentSelectedAttribute.value;
-      
-      previewText.textContent = `Set ${componentName}.${propertyName} to: ${JSON.stringify(value)}`;
-      previewDiv.style.display = 'block';
-      
-      // Enable/disable apply button
-      const applyButton = document.getElementById('apply-component-mapping');
-      applyButton.disabled = false;
+      updateSaveButtons();
     }
-
-    // Tab 2 Event Handlers
-    document.getElementById('component-attribute-select').onchange = (e) => {
-      const selectedIndex = e.target.value;
-      const infoDiv = document.getElementById('component-attribute-info');
-      const mappingSection = document.getElementById('component-mapping-section');
+    
+    function updateSaveButtons() {
+      const saveButton = document.getElementById('save-component-mapping-tab2');
+      const clearButton = document.getElementById('clear-mappings-tab2');
       
-      if (selectedIndex === '') {
-        infoDiv.style.display = 'none';
-        mappingSection.style.display = 'none';
-        componentSelectedAttribute = null;
+      const hasMappings = Object.keys(componentMappings).length > 0;
+      saveButton.disabled = !hasMappings;
+      clearButton.disabled = !hasMappings;
+    }
+    
+    function clearAllMappings() {
+      componentMappings = {};
+      
+      // Reset all dropdowns
+      document.querySelectorAll('.attribute-select').forEach(select => {
+        select.value = '';
+      });
+      
+      updateSaveButtons();
+    }
+    
+    function saveComponentMapping() {
+      if (Object.keys(componentMappings).length === 0 || !selectedComponent) {
         return;
       }
       
-      componentSelectedAttribute = attributePaths[selectedIndex];
+      // Convert mappings to the format expected by the backend
+      const mappings = Object.entries(componentMappings).map(([propertyName, attributeData]) => {
+        // Extract just the attribute data without display properties
+        const { displayPropertyName, ...attribute } = attributeData;
+        return {
+          attribute: attribute,
+          componentId: selectedComponent.id,
+          property: { name: propertyName }
+        };
+      });
       
-      document.getElementById('comp-selected-attribute').textContent = componentSelectedAttribute.path;
-      document.getElementById('comp-selected-value').textContent = JSON.stringify(componentSelectedAttribute.value);
-      document.getElementById('comp-selected-type').textContent = componentSelectedAttribute.type;
-      
-      infoDiv.style.display = 'block';
-      mappingSection.style.display = 'block';
-      
-      requestAvailableComponents();
-      updateComponentMappingPreview();
-    };
-
-    document.getElementById('component-select').onchange = (e) => {
-      const componentId = e.target.value;
-      if (componentId) {
-        parent.postMessage({ 
-          pluginMessage: { 
-            type: 'get-component-properties',
-            componentId: componentId
-          } 
-        }, '*');
-      }
-      updateComponentMappingPreview();
-    };
-
-    document.getElementById('component-property-select').onchange = () => {
-      updateComponentMappingPreview();
-    };
-
-    document.getElementById('apply-component-mapping').onclick = () => {
-      const componentId = document.getElementById('component-select').value;
-      const property = document.getElementById('component-property-select').value;
-      
-      if (!componentSelectedAttribute || !componentId || !property) {
-        return;
-      }
-      
+      // Send to plugin
       parent.postMessage({
         pluginMessage: {
-          type: 'apply-component-mapping',
-          attribute: componentSelectedAttribute,
-          componentId: componentId,
-          property: property
+          type: 'apply-all-component-mappings',
+          mappings: mappings
         }
       }, '*');
+      
+      // Clear mappings after saving
+      clearAllMappings();
+    }
+    
+    // Tab 2 Event Handlers
+    document.getElementById('component-select-tab2').onchange = (e) => {
+      handleComponentSelection(e.target.value);
     };
-
-    document.getElementById('refresh-components').onclick = () => {
-      requestAvailableComponents();
+    
+    document.getElementById('save-component-mapping-tab2').onclick = () => {
+      saveComponentMapping();
+    };
+    
+    document.getElementById('clear-mappings-tab2').onclick = () => {
+      clearAllMappings();
+    };
+    
+    document.getElementById('refresh-components-tab2').onclick = () => {
+      requestComponentsForTab2();
     };
 
     // Allow pressing Enter in textarea to apply

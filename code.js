@@ -4,7 +4,7 @@
 console.log("JSON Attribute Inspector starting...");
 
 // Show the UI
-figma.showUI(__html__, { width: 460, height: 750 });
+figma.showUI(__html__, { width: 600, height: 700 });
 
 // Store the current JSON data and selected attribute
 let currentJsonData = null;
@@ -40,6 +40,10 @@ figma.ui.onmessage = msg => {
   
   if (msg.type === 'apply-component-mapping') {
     applyAttributeToComponent(msg.attribute, msg.componentId, msg.property);
+  }
+  
+  if (msg.type === 'apply-all-component-mappings') {
+    applyAllComponentMappings(msg.mappings);
   }
   
   if (msg.type === 'create-text-node') {
@@ -273,23 +277,21 @@ function sendComponentProperties(componentId) {
     if (component.componentPropertyDefinitions) {
       Object.keys(component.componentPropertyDefinitions).forEach(propName => {
         const propDef = component.componentPropertyDefinitions[propName];
+        
+        // Clean up property name by removing internal IDs (e.g., "title#18:2" → "title")
+        const cleanName = propName.split('#')[0];
+        
         properties.push({
-          name: propName,
+          name: cleanName,
+          originalName: propName, // Keep original for backend mapping
           type: propDef.type,
           defaultValue: propDef.defaultValue
         });
       });
     }
     
-    // Also add text layers as potential targets
-    const textNodes = component.findAll(node => node.type === "TEXT");
-    textNodes.forEach(textNode => {
-      properties.push({
-        name: `text:${textNode.name}`,
-        type: "TEXT",
-        defaultValue: textNode.characters
-      });
-    });
+    // Note: Text layers are excluded for component-first workflow
+    // They can still be modified via Tab 1 layer mapping
     
     figma.ui.postMessage({
       type: 'component-properties',
@@ -317,32 +319,45 @@ async function applyAttributeToComponent(attribute, componentId, property) {
     // Handle text node properties
     if (property.startsWith('text:')) {
       const textNodeName = property.replace('text:', '');
-      const textNode = component.findOne(node => node.type === "TEXT" && node.name === textNodeName);
+      
+      // Find text node within the component using the correct API
+      const textNodes = component.findAll(node => node.type === "TEXT");
+      const textNode = textNodes.find(node => node.name === textNodeName);
       
       if (textNode) {
         await figma.loadFont({ family: "Inter", style: "Regular" });
         textNode.characters = String(value);
         figma.notify(`✅ Set ${textNodeName} text to: "${value}"`);
       } else {
-        figma.notify("❌ Text node not found");
+        figma.notify(`❌ Text node "${textNodeName}" not found`);
       }
       return;
     }
     
-    // Handle component properties
+    // Handle component properties - create an instance to modify
     if (component.componentPropertyDefinitions && component.componentPropertyDefinitions[property]) {
       const propDef = component.componentPropertyDefinitions[property];
       
+      // Create an instance of the component to modify its properties
+      const instance = component.createInstance();
+      instance.x = 150;
+      instance.y = 100;
+      figma.currentPage.appendChild(instance);
+      
       switch (propDef.type) {
         case 'TEXT':
-          component.componentPropertyDefinitions[property].defaultValue = String(value);
-          figma.notify(`✅ Set component property ${property} to: "${value}"`);
+          instance.setProperties({
+            [property]: String(value)
+          });
+          figma.notify(`✅ Created instance with ${property} = "${value}"`);
           break;
           
         case 'BOOLEAN':
           if (typeof value === 'boolean') {
-            component.componentPropertyDefinitions[property].defaultValue = value;
-            figma.notify(`✅ Set component property ${property} to: ${value}`);
+            instance.setProperties({
+              [property]: value
+            });
+            figma.notify(`✅ Created instance with ${property} = ${value}`);
           } else {
             figma.notify("❌ Value must be true or false for boolean properties");
           }
@@ -353,24 +368,133 @@ async function applyAttributeToComponent(attribute, componentId, property) {
           break;
           
         case 'VARIANT':
-          component.componentPropertyDefinitions[property].defaultValue = String(value);
-          figma.notify(`✅ Set variant property ${property} to: "${value}"`);
+          instance.setProperties({
+            [property]: String(value)
+          });
+          figma.notify(`✅ Created instance with variant ${property} = "${value}"`);
           break;
           
         default:
           figma.notify("❌ Unsupported property type");
       }
+      
+      // Select the instance to show changes
+      figma.currentPage.selection = [instance];
+      figma.viewport.scrollAndZoomIntoView([instance]);
+      
     } else {
-      figma.notify("❌ Component property not found");
+      figma.notify(`❌ Component property "${property}" not found`);
     }
-    
-    // Select the component to show changes
-    figma.currentPage.selection = [component];
-    figma.viewport.scrollAndZoomIntoView([component]);
     
   } catch (error) {
     console.error("Error applying component mapping:", error);
     figma.notify(`❌ Error: ${error.message}`);
+  }
+}
+
+// Apply multiple mappings to create a single component instance
+async function applyAllComponentMappings(mappings) {
+  if (!mappings || mappings.length === 0) {
+    figma.notify("❌ No mappings provided");
+    return;
+  }
+  
+  // Group mappings by component
+  const componentGroups = {};
+  mappings.forEach(mapping => {
+    if (!componentGroups[mapping.componentId]) {
+      componentGroups[mapping.componentId] = [];
+    }
+    componentGroups[mapping.componentId].push(mapping);
+  });
+  
+  // Process each component group
+  for (const [componentId, componentMappings] of Object.entries(componentGroups)) {
+    const component = figma.getNodeById(componentId);
+    
+    if (!component || component.type !== "COMPONENT") {
+      figma.notify(`❌ Component not found: ${componentId}`);
+      continue;
+    }
+    
+    try {
+      // Create an instance of the component
+      const instance = component.createInstance();
+      instance.x = 150;
+      instance.y = 100;
+      figma.currentPage.appendChild(instance);
+      
+      // Apply all mappings to this instance
+      const properties = {};
+      const textUpdates = [];
+      
+      for (const mapping of componentMappings) {
+        const value = mapping.attribute.value;
+        const propertyName = mapping.property.name;
+        
+        // Handle text node properties
+        if (propertyName.startsWith('text:')) {
+          const textNodeName = propertyName.replace('text:', '');
+          textUpdates.push({ nodeName: textNodeName, value: String(value) });
+        } else {
+          // Handle component properties
+          if (component.componentPropertyDefinitions && component.componentPropertyDefinitions[propertyName]) {
+            const propDef = component.componentPropertyDefinitions[propertyName];
+            
+            switch (propDef.type) {
+              case 'TEXT':
+                properties[propertyName] = String(value);
+                break;
+              case 'BOOLEAN':
+                if (typeof value === 'boolean') {
+                  properties[propertyName] = value;
+                } else {
+                  console.warn(`Boolean property ${propertyName} received non-boolean value:`, value);
+                }
+                break;
+              case 'VARIANT':
+                properties[propertyName] = String(value);
+                break;
+              case 'INSTANCE_SWAP':
+                console.warn(`Instance swap property ${propertyName} not yet supported`);
+                break;
+            }
+          }
+        }
+      }
+      
+      // Apply component properties if any
+      if (Object.keys(properties).length > 0) {
+        instance.setProperties(properties);
+      }
+      
+      // Apply text node updates if any
+      if (textUpdates.length > 0) {
+        await figma.loadFont({ family: "Inter", style: "Regular" });
+        
+        for (const textUpdate of textUpdates) {
+          const textNodes = instance.findAll(node => node.type === "TEXT");
+          const textNode = textNodes.find(node => node.name === textUpdate.nodeName);
+          
+          if (textNode) {
+            textNode.characters = textUpdate.value;
+          } else {
+            console.warn(`Text node "${textUpdate.nodeName}" not found in component instance`);
+          }
+        }
+      }
+      
+      // Select the instance to show changes
+      figma.currentPage.selection = [instance];
+      figma.viewport.scrollAndZoomIntoView([instance]);
+      
+      const mappingCount = componentMappings.length;
+      figma.notify(`✅ Created ${component.name} instance with ${mappingCount} mapping${mappingCount > 1 ? 's' : ''} applied`);
+      
+    } catch (error) {
+      console.error("Error applying mappings to component:", error);
+      figma.notify(`❌ Error applying mappings to ${component.name}: ${error.message}`);
+    }
   }
 }
 
