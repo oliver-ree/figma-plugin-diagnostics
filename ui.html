@@ -1521,6 +1521,8 @@
     // Listen for messages from the plugin code
     window.onmessage = (event) => {
       const msg = event.data.pluginMessage;
+      console.log('UI received message:', msg.type, msg);
+      
       if (msg.type === 'layer-selection') {
         currentLayer = msg.layer;
         updateLayerInfo();
@@ -1533,16 +1535,19 @@
         displayComponentProperties(msg.properties);
       }
       if (msg.type === 'saved-mappings') {
+        console.log('Received saved mappings:', msg.mappings);
         savedMappings = msg.mappings;
         updateSavedMappingsDisplay();
       }
       if (msg.type === 'mapping-saved') {
+        console.log('Mapping saved successfully:', msg.name);
         alert(`✅ Mapping "${msg.name}" saved successfully!`);
         // Switch to manage view after successful save
         switchTab2View('manage');
         requestSavedMappings(); // Refresh the list
       }
       if (msg.type === 'mapping-deleted') {
+        console.log('Mapping deleted successfully');
         alert(`✅ Mapping deleted successfully!`);
         requestSavedMappings(); // Refresh the list
       }
@@ -2026,12 +2031,17 @@
       
       // Send to main plugin code to save using clientStorage
       console.log('Sending save-mapping message with config:', mappingConfig);
-      parent.postMessage({
-        pluginMessage: {
-          type: 'save-mapping',
-          mapping: mappingConfig
-        }
-      }, '*');
+      try {
+        parent.postMessage({
+          pluginMessage: {
+            type: 'save-mapping',
+            mapping: mappingConfig
+          }
+        }, '*');
+        console.log('Message sent successfully');
+      } catch (error) {
+        console.error('Error sending message:', error);
+      }
     }
     
     // Global variable to store saved mappings
@@ -2039,26 +2049,36 @@
     
     // Request saved mappings from main plugin code
     function requestSavedMappings() {
-      parent.postMessage({
-        pluginMessage: {
-          type: 'get-saved-mappings'
-        }
-      }, '*');
+      console.log('Requesting saved mappings...');
+      try {
+        parent.postMessage({
+          pluginMessage: {
+            type: 'get-saved-mappings'
+          }
+        }, '*');
+        console.log('get-saved-mappings message sent');
+      } catch (error) {
+        console.error('Error requesting saved mappings:', error);
+      }
     }
     
     // Load saved mappings and update display
     function updateSavedMappingsDisplay() {
+      console.log('updateSavedMappingsDisplay called with savedMappings:', savedMappings);
       const mappingsGrid = document.getElementById('mappings-grid');
       const manageEmptyState = document.getElementById('manage-empty-state');
       
       const mappingArray = Object.values(savedMappings);
+      console.log('mappingArray length:', mappingArray.length);
       
       if (mappingArray.length === 0) {
+        console.log('No mappings found - showing empty state');
         mappingsGrid.style.display = 'none';
         manageEmptyState.style.display = 'block';
         return;
       }
       
+      console.log('Displaying', mappingArray.length, 'mappings');
       mappingsGrid.style.display = 'grid';
       manageEmptyState.style.display = 'none';
       
