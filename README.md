@@ -21,6 +21,7 @@ A Figma plugin that allows you to paste JSON data, inspect all its attributes th
 
 ## Usage
 
+### Tab 1: Layer Mapping
 1. Run the plugin in Figma
 2. Paste your JSON data into the text area
 3. Click "Apply JSON" to parse the data
@@ -28,6 +29,14 @@ A Figma plugin that allows you to paste JSON data, inspect all its attributes th
 5. Select a layer on the canvas (or create one)
 6. Choose what layer property to apply the attribute to
 7. Click "Apply to Layer" to execute the mapping
+
+### Tab 2: Component Properties
+1. Ensure you have JSON data loaded (from Tab 1)
+2. Switch to "Component Properties" tab
+3. Select an attribute from the dataset
+4. Choose a component from your file
+5. Select a component property to map to
+6. Click "Apply Component Mapping" to execute
 
 ## Features
 
@@ -40,8 +49,8 @@ A Figma plugin that allows you to paste JSON data, inspect all its attributes th
   - 🌲 Nested Properties - Deep nested values
 - **Deep Attribute Extraction**: Automatically finds all nested properties and array elements
 - **Interactive Dropdown**: Browse all attributes with path notation (e.g., `user.address.city`)
-- **Layer Mapping**: Apply JSON attributes directly to selected layers on canvas
-- **Property Selection**: Choose what layer property to apply:
+- **Tabbed Interface**: Clean separation between layer mapping and component properties
+- **Layer Mapping** (Tab 1): Apply JSON attributes directly to selected layers on canvas
   - 📝 Text Content
   - 🎨 Fill Color (hex)
   - 📏 Width/Height
@@ -49,6 +58,11 @@ A Figma plugin that allows you to paste JSON data, inspect all its attributes th
   - 👻 Opacity
   - 🔄 Rotation
   - 🏷️ Layer Name
+- **Component Property Mapping** (Tab 2): Map attributes to Figma component properties
+  - Text properties
+  - Boolean properties
+  - Variant properties  
+  - Text layer overrides
 - **Real-time Preview**: See exactly what will be applied before executing
 - **Auto-sync Selection**: Automatically detects when you select different layers
 - **Statistics Dashboard**: View breakdown of object types in your JSON

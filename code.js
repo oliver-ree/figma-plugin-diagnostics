@@ -4,7 +4,7 @@
 console.log("JSON Attribute Inspector starting...");
 
 // Show the UI
-figma.showUI(__html__, { width: 420, height: 650 });
+figma.showUI(__html__, { width: 440, height: 700 });
 
 // Store the current JSON data and selected attribute
 let currentJsonData = null;
@@ -28,6 +28,18 @@ figma.ui.onmessage = msg => {
   
   if (msg.type === 'apply-mapping') {
     applyAttributeToLayer(msg.attribute, msg.property, msg.layer);
+  }
+  
+  if (msg.type === 'get-components') {
+    sendAvailableComponents();
+  }
+  
+  if (msg.type === 'get-component-properties') {
+    sendComponentProperties(msg.componentId);
+  }
+  
+  if (msg.type === 'apply-component-mapping') {
+    applyAttributeToComponent(msg.attribute, msg.componentId, msg.property);
   }
   
   if (msg.type === 'create-text-node') {
@@ -227,6 +239,139 @@ function hexToRgb(hex) {
     g: parseInt(result[2], 16) / 255,
     b: parseInt(result[3], 16) / 255
   } : null;
+}
+
+// Send available components to UI
+function sendAvailableComponents() {
+  const components = figma.root.findAll(node => node.type === "COMPONENT");
+  
+  const componentList = components.map(comp => ({
+    id: comp.id,
+    name: comp.name,
+    description: comp.description || "No description"
+  }));
+  
+  figma.ui.postMessage({
+    type: 'components-list',
+    components: componentList
+  });
+}
+
+// Send component properties to UI
+function sendComponentProperties(componentId) {
+  const component = figma.getNodeById(componentId);
+  
+  if (!component || component.type !== "COMPONENT") {
+    figma.notify("❌ Component not found");
+    return;
+  }
+  
+  try {
+    const properties = [];
+    
+    // Get component property definitions
+    if (component.componentPropertyDefinitions) {
+      Object.keys(component.componentPropertyDefinitions).forEach(propName => {
+        const propDef = component.componentPropertyDefinitions[propName];
+        properties.push({
+          name: propName,
+          type: propDef.type,
+          defaultValue: propDef.defaultValue
+        });
+      });
+    }
+    
+    // Also add text layers as potential targets
+    const textNodes = component.findAll(node => node.type === "TEXT");
+    textNodes.forEach(textNode => {
+      properties.push({
+        name: `text:${textNode.name}`,
+        type: "TEXT",
+        defaultValue: textNode.characters
+      });
+    });
+    
+    figma.ui.postMessage({
+      type: 'component-properties',
+      properties: properties
+    });
+    
+  } catch (error) {
+    console.error("Error getting component properties:", error);
+    figma.notify("❌ Error getting component properties");
+  }
+}
+
+// Apply attribute to component property
+async function applyAttributeToComponent(attribute, componentId, property) {
+  const component = figma.getNodeById(componentId);
+  
+  if (!component || component.type !== "COMPONENT") {
+    figma.notify("❌ Component not found");
+    return;
+  }
+  
+  const value = attribute.value;
+  
+  try {
+    // Handle text node properties
+    if (property.startsWith('text:')) {
+      const textNodeName = property.replace('text:', '');
+      const textNode = component.findOne(node => node.type === "TEXT" && node.name === textNodeName);
+      
+      if (textNode) {
+        await figma.loadFont({ family: "Inter", style: "Regular" });
+        textNode.characters = String(value);
+        figma.notify(`✅ Set ${textNodeName} text to: "${value}"`);
+      } else {
+        figma.notify("❌ Text node not found");
+      }
+      return;
+    }
+    
+    // Handle component properties
+    if (component.componentPropertyDefinitions && component.componentPropertyDefinitions[property]) {
+      const propDef = component.componentPropertyDefinitions[property];
+      
+      switch (propDef.type) {
+        case 'TEXT':
+          component.componentPropertyDefinitions[property].defaultValue = String(value);
+          figma.notify(`✅ Set component property ${property} to: "${value}"`);
+          break;
+          
+        case 'BOOLEAN':
+          if (typeof value === 'boolean') {
+            component.componentPropertyDefinitions[property].defaultValue = value;
+            figma.notify(`✅ Set component property ${property} to: ${value}`);
+          } else {
+            figma.notify("❌ Value must be true or false for boolean properties");
+          }
+          break;
+          
+        case 'INSTANCE_SWAP':
+          figma.notify("⚠️ Instance swap properties not yet supported");
+          break;
+          
+        case 'VARIANT':
+          component.componentPropertyDefinitions[property].defaultValue = String(value);
+          figma.notify(`✅ Set variant property ${property} to: "${value}"`);
+          break;
+          
+        default:
+          figma.notify("❌ Unsupported property type");
+      }
+    } else {
+      figma.notify("❌ Component property not found");
+    }
+    
+    // Select the component to show changes
+    figma.currentPage.selection = [component];
+    figma.viewport.scrollAndZoomIntoView([component]);
+    
+  } catch (error) {
+    console.error("Error applying component mapping:", error);
+    figma.notify(`❌ Error: ${error.message}`);
+  }
 }
 
 // Listen for selection changes

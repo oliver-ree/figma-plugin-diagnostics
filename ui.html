@@ -145,13 +145,64 @@
     .attributes-section.show {
       display: block;
     }
+    
+    /* Tab System */
+    .tab-nav {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .tab-button {
+      background: none;
+      border: none;
+      padding: 12px 20px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #666;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+      width: auto;
+    }
+    
+    .tab-button:hover {
+      background: #f8f9fa;
+      color: #333;
+    }
+    
+    .tab-button.active {
+      color: #18a0fb;
+      border-bottom-color: #18a0fb;
+      background: none;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .target-selection {
+      margin-bottom: 12px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>JSON Attribute Inspector</h2>
     
-    <!-- JSON Input Section -->
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button class="tab-button active" data-tab="tab1">Layer Mapping</button>
+      <button class="tab-button" data-tab="tab2">Component Properties</button>
+    </div>
+    
+    <!-- Tab 1: Current functionality -->
+    <div class="tab-content active" id="tab1">
+      <!-- JSON Input Section -->
     <div class="section">
       <label for="json-input">Paste JSON Data:</label>
       <textarea 
@@ -203,6 +254,51 @@
       <button id="apply-mapping" disabled>Apply to Layer</button>
       <button id="refresh-selection" style="background: #666; margin-top: 8px;">Refresh Selection</button>
     </div>
+    </div>
+    
+    <!-- Tab 2: Component Property Mapping -->
+    <div class="tab-content" id="tab2">
+      <!-- Dataset Section -->
+      <div class="section">
+        <label>Dataset to link</label>
+        <p style="font-size: 11px; color: #666; margin: 0 0 12px 0;">Search for the dataset source to use for this link</p>
+        <select id="component-attribute-select">
+          <option value="">Select an attribute</option>
+        </select>
+        <div id="component-attribute-info" style="margin-top: 12px; padding: 8px; background: #f8f9fa; border-radius: 4px; font-size: 11px; display: none;">
+          <strong>Selected:</strong> <span id="comp-selected-attribute"></span><br>
+          <strong>Value:</strong> <span id="comp-selected-value"></span><br>
+          <strong>Type:</strong> <span id="comp-selected-type"></span>
+        </div>
+      </div>
+      
+      <!-- Figma Target Section -->
+      <div class="section" id="component-mapping-section" style="display: none;">
+        <label>Figma target</label>
+        <p style="font-size: 11px; color: #666; margin: 0 0 12px 0;">Set the target action for apply</p>
+        
+        <div class="target-selection">
+          <label for="component-select">Component</label>
+          <select id="component-select">
+            <option value="">Select component...</option>
+          </select>
+        </div>
+        
+        <div class="target-selection" style="margin-top: 12px;">
+          <label for="component-property-select">Property</label>
+          <select id="component-property-select">
+            <option value="">Select property...</option>
+          </select>
+        </div>
+        
+        <div id="component-mapping-preview" style="display: none; margin: 12px 0; padding: 8px; background: #fff3cd; border-radius: 4px; font-size: 11px;">
+          <strong>Preview:</strong> <span id="component-preview-text"></span>
+        </div>
+        
+        <button id="apply-component-mapping" disabled>Apply Component Mapping</button>
+        <button id="refresh-components" style="background: #666; margin-top: 8px;">Refresh Components</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -210,6 +306,36 @@
     let attributePaths = [];
     let selectedAttribute = null;
     let currentLayer = null;
+    let componentSelectedAttribute = null;
+    let availableComponents = [];
+
+    // Tab switching functionality
+    document.querySelectorAll('.tab-button').forEach(button => {
+      button.addEventListener('click', (e) => {
+        const targetTab = e.target.getAttribute('data-tab');
+        switchTab(targetTab);
+      });
+    });
+
+    function switchTab(tabId) {
+      // Update button states
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+      
+      // Update content visibility
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      document.getElementById(tabId).classList.add('active');
+      
+      // Populate component attribute dropdown when switching to tab 2
+      if (tabId === 'tab2' && attributePaths.length > 0) {
+        populateComponentAttributeDropdown();
+        requestAvailableComponents();
+      }
+    }
 
     // Extract all possible attribute paths from a JSON object
     function extractAttributePaths(obj, prefix = '') {
@@ -414,6 +540,13 @@
         currentLayer = msg.layer;
         updateLayerInfo();
       }
+      if (msg.type === 'components-list') {
+        availableComponents = msg.components;
+        populateComponentsDropdown(msg.components);
+      }
+      if (msg.type === 'component-properties') {
+        populateComponentPropertiesDropdown(msg.properties);
+      }
     };
 
     // Attribute selection handler
@@ -552,6 +685,178 @@
       const applyButton = document.getElementById('apply-mapping');
       applyButton.disabled = !currentLayer;
     }
+
+    // Component Tab 2 Functions
+    function populateComponentAttributeDropdown() {
+      const select = document.getElementById('component-attribute-select');
+      select.innerHTML = '<option value="">Select an attribute</option>';
+      
+      // Use the same categorization as Tab 1
+      const categories = {
+        root: { label: "🏠 Root Level", items: [] },
+        primitives: { label: "📝 Primitive Values", items: [] },
+        objects: { label: "📦 Objects", items: [] },
+        arrays: { label: "📋 Arrays", items: [] },
+        arrayItems: { label: "🔢 Array Items", items: [] },
+        nested: { label: "🌲 Nested Properties", items: [] }
+      };
+      
+      attributePaths.forEach((attr, index) => {
+        const item = { attr, index };
+        
+        if (!attr.path.includes('.') && !attr.path.includes('[')) {
+          categories.root.items.push(item);
+        } else if (attr.path.includes('[') && !attr.path.includes('.', attr.path.lastIndexOf('['))) {
+          categories.arrayItems.items.push(item);
+        } else if (attr.type === 'object') {
+          categories.objects.items.push(item);
+        } else if (attr.type === 'array') {
+          categories.arrays.items.push(item);
+        } else if (attr.path.includes('.') || attr.path.includes('[')) {
+          categories.nested.items.push(item);
+        } else {
+          categories.primitives.items.push(item);
+        }
+      });
+      
+      Object.values(categories).forEach(category => {
+        if (category.items.length > 0) {
+          const optgroup = document.createElement('optgroup');
+          optgroup.label = `${category.label} (${category.items.length})`;
+          
+          category.items.sort((a, b) => a.attr.path.localeCompare(b.attr.path));
+          
+          category.items.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.index;
+            option.textContent = `${item.attr.path} (${item.attr.type})`;
+            optgroup.appendChild(option);
+          });
+          
+          select.appendChild(optgroup);
+        }
+      });
+    }
+
+    function requestAvailableComponents() {
+      parent.postMessage({ 
+        pluginMessage: { 
+          type: 'get-components'
+        } 
+      }, '*');
+    }
+
+    function populateComponentsDropdown(components) {
+      const select = document.getElementById('component-select');
+      select.innerHTML = '<option value="">Select component...</option>';
+      
+      components.forEach(component => {
+        const option = document.createElement('option');
+        option.value = component.id;
+        option.textContent = component.name;
+        select.appendChild(option);
+      });
+    }
+
+    function populateComponentPropertiesDropdown(properties) {
+      const select = document.getElementById('component-property-select');
+      select.innerHTML = '<option value="">Select property...</option>';
+      
+      properties.forEach(property => {
+        const option = document.createElement('option');
+        option.value = property.name;
+        option.textContent = property.name;
+        select.appendChild(option);
+      });
+    }
+
+    function updateComponentMappingPreview() {
+      const previewDiv = document.getElementById('component-mapping-preview');
+      const previewText = document.getElementById('component-preview-text');
+      const componentSelect = document.getElementById('component-select');
+      const propertySelect = document.getElementById('component-property-select');
+      
+      if (!componentSelectedAttribute || !componentSelect.value || !propertySelect.value) {
+        previewDiv.style.display = 'none';
+        return;
+      }
+      
+      const componentName = componentSelect.options[componentSelect.selectedIndex].text;
+      const propertyName = propertySelect.value;
+      const value = componentSelectedAttribute.value;
+      
+      previewText.textContent = `Set ${componentName}.${propertyName} to: ${JSON.stringify(value)}`;
+      previewDiv.style.display = 'block';
+      
+      // Enable/disable apply button
+      const applyButton = document.getElementById('apply-component-mapping');
+      applyButton.disabled = false;
+    }
+
+    // Tab 2 Event Handlers
+    document.getElementById('component-attribute-select').onchange = (e) => {
+      const selectedIndex = e.target.value;
+      const infoDiv = document.getElementById('component-attribute-info');
+      const mappingSection = document.getElementById('component-mapping-section');
+      
+      if (selectedIndex === '') {
+        infoDiv.style.display = 'none';
+        mappingSection.style.display = 'none';
+        componentSelectedAttribute = null;
+        return;
+      }
+      
+      componentSelectedAttribute = attributePaths[selectedIndex];
+      
+      document.getElementById('comp-selected-attribute').textContent = componentSelectedAttribute.path;
+      document.getElementById('comp-selected-value').textContent = JSON.stringify(componentSelectedAttribute.value);
+      document.getElementById('comp-selected-type').textContent = componentSelectedAttribute.type;
+      
+      infoDiv.style.display = 'block';
+      mappingSection.style.display = 'block';
+      
+      requestAvailableComponents();
+      updateComponentMappingPreview();
+    };
+
+    document.getElementById('component-select').onchange = (e) => {
+      const componentId = e.target.value;
+      if (componentId) {
+        parent.postMessage({ 
+          pluginMessage: { 
+            type: 'get-component-properties',
+            componentId: componentId
+          } 
+        }, '*');
+      }
+      updateComponentMappingPreview();
+    };
+
+    document.getElementById('component-property-select').onchange = () => {
+      updateComponentMappingPreview();
+    };
+
+    document.getElementById('apply-component-mapping').onclick = () => {
+      const componentId = document.getElementById('component-select').value;
+      const property = document.getElementById('component-property-select').value;
+      
+      if (!componentSelectedAttribute || !componentId || !property) {
+        return;
+      }
+      
+      parent.postMessage({
+        pluginMessage: {
+          type: 'apply-component-mapping',
+          attribute: componentSelectedAttribute,
+          componentId: componentId,
+          property: property
+        }
+      }, '*');
+    };
+
+    document.getElementById('refresh-components').onclick = () => {
+      requestAvailableComponents();
+    };
 
     // Allow pressing Enter in textarea to apply
     document.getElementById('json-input').addEventListener('keydown', (e) => {
