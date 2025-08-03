@@ -557,7 +557,7 @@
     
     .full-width-select {
       width: 100%;
-      padding: 12px 16px;
+      padding: 12px 12px;
       border: 1px solid #ddd;
       border-radius: 8px;
       font-size: 14px;
@@ -566,7 +566,7 @@
     }
     
     .property-mapping-section {
-      padding: 20px;
+      padding: 20px 20px 24px 20px;
       background: #fafbfc;
       border: 1px solid #e1e5e9;
       border-radius: 12px;
@@ -650,8 +650,9 @@
     .save-actions {
       margin-top: 24px;
       display: flex;
+      flex-direction: column;
       gap: 12px;
-      justify-content: center;
+      align-items: center;
     }
     
     .save-actions button {
@@ -789,7 +790,7 @@
       
       <!-- Property Mapping Section -->
       <div id="property-mapping-section" class="property-mapping-section" style="display: none;">
-        <h3 style="margin: 24px 0 12px 0; font-size: 16px; color: #333;">2. Map Properties to Attributes</h3>
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #333;">2. Map Properties to Attributes</h3>
         <div id="property-mappings-list" class="property-mappings-list">
           <!-- Dynamic property mapping rows will be inserted here -->
         </div>
