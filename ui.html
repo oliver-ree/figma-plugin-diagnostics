@@ -88,12 +88,40 @@
       background: white;
       cursor: pointer;
       box-sizing: border-box;
+      max-height: 200px;
     }
     
     select:focus {
       outline: none;
       border-color: #18a0fb;
       box-shadow: 0 0 0 2px rgba(24, 160, 251, 0.2);
+    }
+    
+    optgroup {
+      font-weight: 600;
+      font-size: 11px;
+      color: #666;
+      background: #f8f9fa;
+      padding: 4px 0;
+    }
+    
+    optgroup option {
+      font-weight: 400;
+      color: #333;
+      padding-left: 12px;
+      background: white;
+    }
+    
+    .stats {
+      font-size: 10px;
+      color: #999;
+      margin-top: 8px;
+      padding: 6px 8px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     
     .error {
@@ -195,6 +223,51 @@
       return paths;
     }
 
+    // Generate statistics about the parsed JSON
+    function generateStats() {
+      const stats = {
+        objects: 0,
+        arrays: 0,
+        primitives: 0,
+        strings: 0,
+        numbers: 0,
+        booleans: 0,
+        nulls: 0
+      };
+      
+      attributePaths.forEach(attr => {
+        if (attr.value === null) {
+          stats.nulls++;
+          stats.primitives++;
+        } else {
+          switch (attr.type) {
+            case 'object':
+              stats.objects++;
+              break;
+            case 'array':
+              stats.arrays++;
+              break;
+            case 'string':
+              stats.strings++;
+              stats.primitives++;
+              break;
+            case 'number':
+              stats.numbers++;
+              stats.primitives++;
+              break;
+            case 'boolean':
+              stats.booleans++;
+              stats.primitives++;
+              break;
+            default:
+              stats.primitives++;
+          }
+        }
+      });
+      
+      return stats;
+    }
+
     // Apply JSON button click handler
     document.getElementById('apply-json').onclick = () => {
       const jsonInput = document.getElementById('json-input').value.trim();
@@ -214,7 +287,15 @@
         attributePaths = extractAttributePaths(currentJsonData);
         
         // Update UI
-        messageDiv.innerHTML = `<div class="success">✅ JSON parsed successfully! Found ${attributePaths.length} attributes.</div>`;
+        const stats = generateStats();
+        messageDiv.innerHTML = `
+          <div class="success">✅ JSON parsed successfully! Found ${attributePaths.length} attributes.</div>
+          <div class="stats">
+            <span>📊 ${stats.objects} objects</span>
+            <span>📋 ${stats.arrays} arrays</span>
+            <span>📝 ${stats.primitives} primitives</span>
+          </div>
+        `;
         
         // Populate the dropdown
         populateAttributeDropdown();
@@ -232,11 +313,66 @@
       const select = document.getElementById('attribute-select');
       select.innerHTML = '<option value="">Choose an attribute...</option>';
       
+      // Categorize attributes
+      const categories = {
+        root: { label: "🏠 Root Level", items: [] },
+        primitives: { label: "📝 Primitive Values", items: [] },
+        objects: { label: "📦 Objects", items: [] },
+        arrays: { label: "📋 Arrays", items: [] },
+        arrayItems: { label: "🔢 Array Items", items: [] },
+        nested: { label: "🌲 Nested Properties", items: [] }
+      };
+      
       attributePaths.forEach((attr, index) => {
-        const option = document.createElement('option');
-        option.value = index;
-        option.textContent = `${attr.path} (${attr.type})`;
-        select.appendChild(option);
+        const item = { attr, index };
+        
+        // Categorize based on path and type
+        if (!attr.path.includes('.') && !attr.path.includes('[')) {
+          // Root level properties
+          categories.root.items.push(item);
+        } else if (attr.path.includes('[') && !attr.path.includes('.', attr.path.lastIndexOf('['))) {
+          // Direct array items like "skills[0]"
+          categories.arrayItems.items.push(item);
+        } else if (attr.type === 'object') {
+          categories.objects.items.push(item);
+        } else if (attr.type === 'array') {
+          categories.arrays.items.push(item);
+        } else if (attr.path.includes('.') || attr.path.includes('[')) {
+          // Nested properties
+          categories.nested.items.push(item);
+        } else {
+          // Primitive values at root
+          categories.primitives.items.push(item);
+        }
+      });
+      
+      // Add categories to dropdown
+      Object.values(categories).forEach(category => {
+        if (category.items.length > 0) {
+          const optgroup = document.createElement('optgroup');
+          optgroup.label = `${category.label} (${category.items.length})`;
+          
+          // Sort items within each category
+          category.items.sort((a, b) => a.attr.path.localeCompare(b.attr.path));
+          
+          category.items.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item.index;
+            
+            // Format the option text based on category
+            let displayText = item.attr.path;
+            if (category === categories.root || category === categories.primitives) {
+              displayText = `${item.attr.path} = ${JSON.stringify(item.attr.value)}`;
+            } else {
+              displayText = `${item.attr.path} (${item.attr.type})`;
+            }
+            
+            option.textContent = displayText;
+            optgroup.appendChild(option);
+          });
+          
+          select.appendChild(optgroup);
+        }
       });
     }
 

@@ -1,45 +1,40 @@
-# JSON Attribute Inspector
+Below are the steps to get your plugin running. You can also find instructions at:
 
-A Figma plugin that allows you to paste JSON data and inspect all its attributes through an interactive dropdown interface.
+  https://www.figma.com/plugin-docs/plugin-quickstart-guide/
 
-## Development
+This plugin template uses Typescript and NPM, two standard tools in creating JavaScript applications.
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
+First, download Node.js which comes with NPM. This will allow you to install TypeScript and other
+libraries. You can find the download link here:
 
-2. Build the plugin:
-   ```bash
-   npm run build
-   ```
+  https://nodejs.org/en/download/
 
-3. In Figma:
-   - Go to Plugins → Development → Import plugin from manifest...
-   - Select the `manifest.json` file from this directory
-   - Run the plugin
+Next, install TypeScript using the command:
 
-## Files
+  npm install -g typescript
 
-- `manifest.json` - Plugin manifest and configuration
-- `code.js` - Main plugin code that runs in Figma's sandbox
-- `ui.html` - Plugin user interface
-- `package.json` - Node.js dependencies and scripts
+Finally, in the directory of your plugin, get the latest type definitions for the plugin API by running:
 
-## Usage
+  npm install --save-dev @figma/plugin-typings
 
-1. Run the plugin in Figma
-2. Paste your JSON data into the text area
-3. Click "Apply JSON" to parse the data
-4. Select any attribute from the dropdown menu
-5. View detailed information about the selected attribute (path, value, type)
-6. The plugin will show notifications when you select attributes
+If you are familiar with JavaScript, TypeScript will look very familiar. In fact, valid JavaScript code
+is already valid Typescript code.
 
-## Features
+TypeScript adds type annotations to variables. This allows code editors such as Visual Studio Code
+to provide information about the Figma API while you are writing code, as well as help catch bugs
+you previously didn't notice.
 
-- **JSON Parsing**: Paste any valid JSON and see it parsed instantly
-- **Deep Attribute Extraction**: Automatically finds all nested properties and array elements
-- **Interactive Dropdown**: Browse all attributes with path notation (e.g., `user.address.city`)
-- **Type Detection**: Shows whether each attribute is a string, number, object, array, etc.
-- **Real-time Feedback**: Get instant notifications about your selections
-- **Keyboard Shortcuts**: Use Cmd/Ctrl+Enter in the textarea to apply JSON quickly
+For more information, visit https://www.typescriptlang.org/
+
+Using TypeScript requires a compiler to convert TypeScript (code.ts) into JavaScript (code.js)
+for the browser to run.
+
+We recommend writing TypeScript code using Visual Studio code:
+
+1. Download Visual Studio Code if you haven't already: https://code.visualstudio.com/.
+2. Open this directory in Visual Studio Code.
+3. Compile TypeScript to JavaScript: Run the "Terminal > Run Build Task..." menu item,
+    then select "npm: watch". You will have to do this again every time
+    you reopen Visual Studio Code.
+
+That's it! Visual Studio Code will regenerate the JavaScript file every time you save.

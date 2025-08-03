@@ -1,6 +1,6 @@
 {
   "name": "JSON Attribute Inspector",
-  "id": "json-attribute-inspector",
+  "id": "json-attribute-inspector-v2",
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",
