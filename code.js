@@ -63,6 +63,7 @@ figma.ui.onmessage = msg => {
   }
   
   if (msg.type === 'save-mapping') {
+    console.log('Received save-mapping message:', msg.mapping);
     saveMappingToStorage(msg.mapping);
   }
   
@@ -77,23 +78,31 @@ figma.ui.onmessage = msg => {
 
 // Save mapping to Figma clientStorage
 async function saveMappingToStorage(mapping) {
+  console.log('Starting saveMappingToStorage with:', mapping);
   try {
+    console.log('Getting existing mappings...');
     // Get existing mappings
     const existingMappings = await figma.clientStorage.getAsync('component-mappings') || {};
+    console.log('Existing mappings:', existingMappings);
     
     // Add the new mapping
     existingMappings[mapping.id] = mapping;
+    console.log('Updated mappings:', existingMappings);
     
+    console.log('Saving to clientStorage...');
     // Save back to storage
     await figma.clientStorage.setAsync('component-mappings', existingMappings);
+    console.log('Successfully saved to clientStorage');
     
     // Send success message to UI
+    console.log('Sending success message to UI...');
     figma.ui.postMessage({
       type: 'mapping-saved',
       name: mapping.name
     });
     
     console.log(`Mapping "${mapping.name}" saved successfully`);
+    figma.notify(`✅ Mapping "${mapping.name}" saved!`);
   } catch (error) {
     console.error('Error saving mapping:', error);
     figma.notify('❌ Failed to save mapping');

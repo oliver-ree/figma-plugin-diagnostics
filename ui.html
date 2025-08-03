@@ -1781,7 +1781,9 @@
       }
       
       const mappingName = prompt('Enter a name for this mapping configuration:');
+      console.log('User entered mapping name:', mappingName);
       if (!mappingName || mappingName.trim() === '') {
+        console.log('User canceled or entered empty name');
         return;
       }
       
@@ -1795,6 +1797,7 @@
       };
       
       // Send to main plugin code to save using clientStorage
+      console.log('Sending save-mapping message with config:', mappingConfig);
       parent.postMessage({
         pluginMessage: {
           type: 'save-mapping',
