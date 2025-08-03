@@ -1970,9 +1970,14 @@
       const clearButton = document.getElementById('clear-mappings-tab2');
       
       const hasMappings = Object.keys(componentMappings).length > 0;
+      console.log('updateSaveButtons - componentMappings:', componentMappings);
+      console.log('updateSaveButtons - hasMappings:', hasMappings);
+      
       applyButton.disabled = !hasMappings;
       saveButton.disabled = !hasMappings;
       clearButton.disabled = !hasMappings;
+      
+      console.log('Save button disabled:', saveButton.disabled);
     }
     
     function clearAllMappings() {
@@ -2325,7 +2330,13 @@
       applyComponentMapping();
     };
     
-    document.getElementById('save-component-mapping-tab2').onclick = () => {
+    document.getElementById('save-component-mapping-tab2').onclick = (e) => {
+      console.log('Save button clicked - event handler called');
+      console.log('Button disabled state:', e.target.disabled);
+      if (e.target.disabled) {
+        console.log('Button is disabled - click ignored');
+        return;
+      }
       saveMappingToMemory();
     };
     
