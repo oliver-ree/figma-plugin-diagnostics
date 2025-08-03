@@ -1826,13 +1826,27 @@
       // Build grouped options HTML
       let options = '<option value="">Choose attribute...</option>';
       
-      // Add batch creation options first
+      // Add batch creation options with better grouping
       if (arrayInfo.length > 0) {
-        options += '<optgroup label="🚀 BATCH CREATE (Multiple Components)">';
-        arrayInfo.forEach(info => {
-          options += `<option value="${info.pattern}" data-batch="true" data-count="${info.count}">${info.displayName} (Creates ${info.count} components)</option>`;
-        });
-        options += '</optgroup>';
+        // Group batch options by array level
+        const simpleArrays = arrayInfo.filter(info => info.level === 'simple');
+        const nestedArrays = arrayInfo.filter(info => info.level === 'nested');
+        
+        if (simpleArrays.length > 0) {
+          options += '<optgroup label="🚀 BATCH CREATE - Simple Arrays">';
+          simpleArrays.forEach(info => {
+            options += `<option value="${info.pattern}" data-batch="true" data-count="${info.count}">${info.displayName} (Creates ${info.count} components)</option>`;
+          });
+          options += '</optgroup>';
+        }
+        
+        if (nestedArrays.length > 0) {
+          options += '<optgroup label="🚀 BATCH CREATE - Nested Arrays">';
+          nestedArrays.forEach(info => {
+            options += `<option value="${info.pattern}" data-batch="true" data-count="${info.count}">${info.displayName} (Creates ${info.count} components)</option>`;
+          });
+          options += '</optgroup>';
+        }
       }
       
       // Add regular single-item options
@@ -1862,19 +1876,55 @@
       const patterns = {};
       
       attributePaths.forEach(attr => {
-        // Look for array patterns like "0.insights[0].title"
+        // Skip if this attribute is an object or array itself (not a leaf value)
+        if (typeof attr.value === 'object' && attr.value !== null) return;
+        
+        // Look for array patterns, but be smarter about nested arrays
         const arrayMatch = attr.path.match(/^(.+?)\[(\d+)\]\.(.+)$/);
         if (arrayMatch) {
-          const [, arrayPath, index, property] = arrayMatch;
-          const patternKey = `${arrayPath}[*].${property}`;
+          const [, arrayPath, index, remainingPath] = arrayMatch;
+          
+          // Check if there are nested arrays in the remaining path
+          const nestedArrayMatch = remainingPath.match(/^(.+?)\[(\d+)\]\.(.+)$/);
+          
+          let patternKey, displayInfo;
+          
+          if (nestedArrayMatch) {
+            // Nested array case: teams[0].users[0].name
+            const [, midPath, nestedIndex, finalProperty] = nestedArrayMatch;
+            const fullArrayPath = `${arrayPath}.${midPath}`;
+            patternKey = `${fullArrayPath}[*].${finalProperty}`;
+            
+            // Create a cleaner display name
+            const baseArrayName = arrayPath.split('.').pop() || arrayPath;
+            const nestedArrayName = midPath.split('.').pop() || midPath;
+            displayInfo = {
+              level: 'nested',
+              baseArray: baseArrayName,
+              nestedArray: nestedArrayName,
+              property: finalProperty,
+              fullPath: fullArrayPath,
+              displayName: `${finalProperty} (${nestedArrayName} in each ${baseArrayName})`
+            };
+          } else {
+            // Simple array case: teams[0].name  
+            patternKey = `${arrayPath}[*].${remainingPath}`;
+            const arrayName = arrayPath.split('.').pop() || arrayPath;
+            displayInfo = {
+              level: 'simple',
+              baseArray: arrayName,
+              property: remainingPath,
+              fullPath: arrayPath,
+              displayName: `${remainingPath} (from each ${arrayName})`
+            };
+          }
           
           if (!patterns[patternKey]) {
             patterns[patternKey] = {
               pattern: patternKey,
-              arrayPath: arrayPath,
-              property: property,
               indices: new Set(),
-              sampleValue: attr.value
+              sampleValue: attr.value,
+              ...displayInfo
             };
           }
           
@@ -1882,20 +1932,28 @@
         }
       });
       
-      // Convert to array and create display info
-      return Object.values(patterns).map(pattern => {
-        const count = pattern.indices.size;
-        const propertyName = pattern.property;
-        const arrayName = pattern.arrayPath.split('.').pop();
-        
-        return {
+      // Convert to array and create final display info with better sorting
+      return Object.values(patterns)
+        .map(pattern => ({
           pattern: pattern.pattern,
-          count: count,
-          displayName: `${propertyName} (from ${arrayName} array)`,
-          arrayPath: pattern.arrayPath,
-          property: pattern.property
-        };
-      });
+          count: pattern.indices.size,
+          displayName: pattern.displayName,
+          level: pattern.level,
+          baseArray: pattern.baseArray,
+          nestedArray: pattern.nestedArray,
+          property: pattern.property,
+          sampleValue: pattern.sampleValue
+        }))
+        .sort((a, b) => {
+          // Sort by level (simple arrays first), then by base array, then by property
+          if (a.level !== b.level) {
+            return a.level === 'simple' ? -1 : 1;
+          }
+          if (a.baseArray !== b.baseArray) {
+            return a.baseArray.localeCompare(b.baseArray);
+          }
+          return a.property.localeCompare(b.property);
+        });
     }
     
     function renderPropertyMappingRows() {
