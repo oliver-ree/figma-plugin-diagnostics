@@ -50,6 +50,10 @@ figma.ui.onmessage = msg => {
     createBatchComponents(msg.componentId, msg.mappings, msg.arrayLength, msg.attributePaths);
   }
   
+  if (msg.type === 'apply-hierarchical-mapping') {
+    applyHierarchicalMapping(msg.componentId, msg.componentMappings, msg.nestedComponentMappings, msg.arrayLength, msg.attributePaths);
+  }
+  
   if (msg.type === 'create-text-node') {
     if (selectedAttribute) {
       createTextNodeWithAttribute();
@@ -364,6 +368,7 @@ function sendComponentProperties(componentId) {
   
   try {
     const properties = [];
+    const nestedComponents = [];
     
     // Get component property definitions
     if (component.componentPropertyDefinitions) {
@@ -382,17 +387,95 @@ function sendComponentProperties(componentId) {
       });
     }
     
-    // Note: Text layers are excluded for component-first workflow
-    // They can still be modified via Tab 1 layer mapping
+    // Find nested component instances with error handling
+    const nestedComponentGroups = {};
     
+    try {
+      const componentInstances = component.findAll(node => node.type === "INSTANCE");
+      
+      componentInstances.forEach(instance => {
+        try {
+          const mainComponent = instance.mainComponent;
+          if (mainComponent && mainComponent.type === "COMPONENT") {
+            const componentName = mainComponent.name || "Unnamed Component";
+            const componentId = mainComponent.id;
+            
+            if (!nestedComponentGroups[componentId]) {
+              nestedComponentGroups[componentId] = {
+                id: componentId,
+                name: componentName,
+                instances: [],
+                properties: []
+              };
+              
+              // Get properties of the nested component with safety checks
+              try {
+                if (mainComponent.componentPropertyDefinitions) {
+                  Object.keys(mainComponent.componentPropertyDefinitions).forEach(propName => {
+                    try {
+                      const propDef = mainComponent.componentPropertyDefinitions[propName];
+                      if (propDef && propDef.type) {
+                        const cleanName = propName.split('#')[0];
+                        
+                        nestedComponentGroups[componentId].properties.push({
+                          name: cleanName,
+                          originalName: propName,
+                          type: propDef.type,
+                          defaultValue: propDef.defaultValue || null
+                        });
+                      }
+                    } catch (propError) {
+                      console.warn(`Error processing property ${propName}:`, propError);
+                    }
+                  });
+                }
+              } catch (propDefError) {
+                console.warn(`Error accessing component property definitions for ${componentName}:`, propDefError);
+              }
+            }
+            
+            nestedComponentGroups[componentId].instances.push({
+              id: instance.id,
+              name: instance.name || "Unnamed Instance"
+            });
+          }
+        } catch (instanceError) {
+          console.warn("Error processing nested component instance:", instanceError);
+        }
+      });
+    } catch (findAllError) {
+      console.warn("Error finding nested components:", findAllError);
+      // Continue execution without nested components
+    }
+    
+    // Convert to array
+    Object.values(nestedComponentGroups).forEach(group => {
+      nestedComponents.push(group);
+    });
+    
+    console.log(`✅ Found ${properties.length} properties and ${nestedComponents.length} nested component types`);
+    
+    // Send successful response even if there were minor errors in nested component detection
     figma.ui.postMessage({
       type: 'component-properties',
-      properties: properties
+      properties: properties,
+      nestedComponents: nestedComponents
     });
     
   } catch (error) {
-    console.error("Error getting component properties:", error);
-    figma.notify("❌ Error getting component properties");
+    console.error("❌ Critical error getting component properties:", error);
+    figma.notify(`❌ Error getting component properties: ${error.message}`);
+    
+    // Send fallback response with just the basic properties
+    try {
+      figma.ui.postMessage({
+        type: 'component-properties', 
+        properties: properties || [],
+        nestedComponents: []
+      });
+    } catch (fallbackError) {
+      console.error("❌ Failed to send fallback response:", fallbackError);
+    }
   }
 }
 
@@ -689,6 +772,193 @@ async function createBatchComponents(componentId, mappings, arrayLength, attribu
   } catch (error) {
     console.error("Error creating batch components:", error);
     figma.notify(`❌ Error creating batch components: ${error.message}`);
+  }
+}
+
+// Apply hierarchical mapping with nested components
+async function applyHierarchicalMapping(componentId, componentMappings, nestedComponentMappings, arrayLength, attributePaths) {
+  const component = figma.getNodeById(componentId);
+  
+  if (!component || component.type !== "COMPONENT") {
+    figma.notify("❌ Component not found");
+    return;
+  }
+  
+  try {
+    console.log(`🚀 Hierarchical mapping: arrayLength=${arrayLength}, nestedMappings:`, Object.keys(nestedComponentMappings));
+    
+    if (arrayLength > 0) {
+      // Create multiple instances with array data
+      figma.notify(`Creating ${arrayLength} instances with nested component mapping...`);
+      
+      const instances = [];
+      const gridCols = Math.min(5, Math.ceil(Math.sqrt(arrayLength)));
+      const spacing = 350;
+      
+      for (let i = 0; i < arrayLength; i++) {
+        const instance = component.createInstance();
+        
+        // Position in a grid
+        const row = Math.floor(i / gridCols);
+        const col = i % gridCols;
+        instance.x = 150 + col * spacing;
+        instance.y = 100 + row * spacing;
+        
+        figma.currentPage.appendChild(instance);
+        instances.push(instance);
+        
+        // Apply main component mappings
+        await applyMappingsToInstance(instance, component, componentMappings, i, attributePaths);
+        
+        // Apply nested component mappings
+        await applyNestedComponentMappings(instance, nestedComponentMappings, i, attributePaths);
+      }
+      
+      // Select all created instances
+      figma.currentPage.selection = instances;
+      figma.viewport.scrollAndZoomIntoView(instances);
+      
+      figma.notify(`✅ Created ${arrayLength} instances with nested components populated`);
+      
+    } else {
+      // Create single instance with nested component array mapping
+      console.log(`📦 Creating single instance with ${Object.keys(nestedComponentMappings).length} nested component types`);
+      const instance = component.createInstance();
+      instance.x = 150;
+      instance.y = 100;
+      figma.currentPage.appendChild(instance);
+      
+      // Apply main component mappings
+      await applyMappingsToInstance(instance, component, componentMappings, 0, attributePaths);
+      
+      // Apply nested component mappings
+      await applyNestedComponentMappings(instance, nestedComponentMappings, 0, attributePaths);
+      
+      figma.currentPage.selection = [instance];
+      figma.viewport.scrollAndZoomIntoView([instance]);
+      
+      figma.notify("✅ Created component instance with nested components populated");
+    }
+    
+  } catch (error) {
+    console.error("Error in hierarchical mapping:", error);
+    figma.notify(`❌ Error: ${error.message}`);
+  }
+}
+
+// Apply mappings to a component instance
+async function applyMappingsToInstance(instance, component, mappings, arrayIndex, attributePaths) {
+  const properties = {};
+  const textUpdates = [];
+  
+  for (const [propertyName, mapping] of Object.entries(mappings)) {
+    const value = getValueForArrayIndex(mapping, arrayIndex, attributePaths);
+    
+    // Handle text node properties
+    if (propertyName.startsWith('text:')) {
+      const textNodeName = propertyName.replace('text:', '');
+      textUpdates.push({ nodeName: textNodeName, value: String(value) });
+    } else if (component.componentPropertyDefinitions && component.componentPropertyDefinitions[propertyName]) {
+      // Handle component properties
+      const propDef = component.componentPropertyDefinitions[propertyName];
+      switch (propDef.type) {
+        case 'TEXT':
+        case 'VARIANT':
+          properties[propertyName] = String(value);
+          break;
+        case 'BOOLEAN':
+          properties[propertyName] = Boolean(value);
+          break;
+      }
+    }
+  }
+  
+  // Apply component properties
+  if (Object.keys(properties).length > 0) {
+    instance.setProperties(properties);
+  }
+  
+  // Apply text updates
+  if (textUpdates.length > 0) {
+    await figma.loadFontAsync({ family: "Inter", style: "Regular" });
+    for (const { nodeName, value } of textUpdates) {
+      const textNodes = instance.findAll(node => node.type === "TEXT");
+      const textNode = textNodes.find(node => node.name === nodeName);
+      if (textNode) {
+        textNode.characters = value;
+      }
+    }
+  }
+}
+
+// Apply nested component mappings
+async function applyNestedComponentMappings(parentInstance, nestedMappings, arrayIndex, attributePaths) {
+  for (const [nestedComponentId, mappings] of Object.entries(nestedMappings)) {
+    // Find all instances of this nested component within the parent
+    const nestedInstances = parentInstance.findAll(node => 
+      node.type === "INSTANCE" && 
+      node.mainComponent && 
+      node.mainComponent.id === nestedComponentId
+    );
+    
+    // Apply mappings to each nested instance
+    for (let instanceIndex = 0; instanceIndex < nestedInstances.length; instanceIndex++) {
+      const nestedInstance = nestedInstances[instanceIndex];
+      const nestedComponent = nestedInstance.mainComponent;
+      
+      if (nestedComponent) {
+        const properties = {};
+        const textUpdates = [];
+        
+        for (const [propertyName, mapping] of Object.entries(mappings)) {
+          // For nested components: if parent is from array, use complex index; otherwise use instanceIndex directly
+          let dataIndex;
+          if (arrayIndex > 0) {
+            // Multiple parent instances - each parent's nested components get offset data
+            dataIndex = arrayIndex * nestedInstances.length + instanceIndex;
+          } else {
+            // Single parent instance - nested components map directly to array indices  
+            dataIndex = instanceIndex;
+          }
+          
+          const value = getValueForArrayIndex(mapping, dataIndex, attributePaths);
+          
+          console.log(`🔍 Nested mapping: ${propertyName} → index ${dataIndex} → "${value}"`);  // Debug log
+          
+          // Handle component properties
+          if (nestedComponent.componentPropertyDefinitions && nestedComponent.componentPropertyDefinitions[propertyName]) {
+            const propDef = nestedComponent.componentPropertyDefinitions[propertyName];
+            switch (propDef.type) {
+              case 'TEXT':
+              case 'VARIANT':
+                properties[propertyName] = String(value);
+                break;
+              case 'BOOLEAN':
+                properties[propertyName] = Boolean(value);
+                break;
+            }
+          }
+        }
+        
+        // Apply properties to nested instance
+        if (Object.keys(properties).length > 0) {
+          nestedInstance.setProperties(properties);
+        }
+      }
+    }
+  }
+}
+
+// Get value for a specific array index
+function getValueForArrayIndex(mapping, arrayIndex, attributePaths) {
+  if (mapping.path && mapping.path.includes('[*]')) {
+    // This is an array pattern - replace [*] with specific index
+    const specificPath = mapping.path.replace('[*]', `[${arrayIndex}]`);
+    const attribute = attributePaths.find(attr => attr.path === specificPath);
+    return attribute ? attribute.value : mapping.value; // Fallback to sample value
+  } else {
+    // Regular single value
+    return mapping.value;
   }
 }
 

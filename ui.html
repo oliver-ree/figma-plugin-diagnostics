@@ -1172,6 +1172,14 @@
             <!-- Dynamic property mapping rows will be inserted here -->
           </div>
           
+          <!-- Nested Components Section -->
+          <div id="nested-components-section" style="display: none; margin-top: 24px;">
+            <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #333;">3. Map Nested Components (Array Data)</h3>
+            <div id="nested-components-list">
+              <!-- Dynamic nested component mapping will be inserted here -->
+            </div>
+          </div>
+          
           <!-- Apply & Save Actions -->
           <div class="save-actions">
             <button id="apply-component-mapping-tab2" disabled style="background: #18a0fb; color: white; font-weight: 600;">Apply</button>
@@ -1573,7 +1581,7 @@
         populateTab2ComponentsDropdown(msg.components);
       }
       if (msg.type === 'component-properties') {
-        displayComponentProperties(msg.properties);
+        displayComponentProperties(msg.properties, msg.nestedComponents || []);
       }
       if (msg.type === 'saved-mappings') {
         console.log('Received saved mappings:', msg.mappings);
@@ -1747,17 +1755,34 @@
       }, '*');
     }
     
-    function displayComponentProperties(properties) {
-      // Filter to only show actual component properties, not text layers
-      componentProperties = properties.filter(prop => !prop.name.startsWith('text:'));
+    function displayComponentProperties(properties, nestedComponents) {
+      console.log('📨 Received component properties:', {
+        properties: properties,
+        nestedComponents: nestedComponents
+      });
       
-      if (componentProperties.length === 0) {
+      try {
+        // Filter to only show actual component properties, not text layers
+        componentProperties = (properties || []).filter(prop => !prop.name.startsWith('text:'));
+        
+        // Store nested components globally with safety check
+        window.currentNestedComponents = Array.isArray(nestedComponents) ? nestedComponents : [];
+        
+        console.log(`✅ Processed: ${componentProperties.length} properties, ${window.currentNestedComponents.length} nested components`);
+        
+        if (componentProperties.length === 0 && window.currentNestedComponents.length === 0) {
+          hidePropertyMappingSection();
+          return;
+        }
+        
+        showPropertyMappingSection();
+        renderPropertyMappingRows();
+        renderNestedComponentsSection();
+        
+      } catch (error) {
+        console.error('❌ Error displaying component properties:', error);
         hidePropertyMappingSection();
-        return;
       }
-      
-      showPropertyMappingSection();
-      renderPropertyMappingRows();
     }
     
     function showPropertyMappingSection() {
@@ -1991,6 +2016,175 @@
       updateSaveButtons();
     }
     
+    function renderNestedComponentsSection() {
+      try {
+        const nestedComponents = window.currentNestedComponents || [];
+        const section = document.getElementById('nested-components-section');
+        const container = document.getElementById('nested-components-list');
+        
+        if (!section || !container) {
+          console.error('❌ Nested components UI elements not found');
+          return;
+        }
+        
+        console.log(`🔄 Rendering ${nestedComponents.length} nested component groups`);
+        
+        if (nestedComponents.length === 0) {
+          section.style.display = 'none';
+          return;
+        }
+        
+        section.style.display = 'block';
+        container.innerHTML = '';
+      
+      nestedComponents.forEach((nestedComp, index) => {
+        try {
+          if (!nestedComp || !nestedComp.name) {
+            console.warn(`⚠️ Invalid nested component at index ${index}:`, nestedComp);
+            return;
+          }
+          
+          const compDiv = document.createElement('div');
+        compDiv.className = 'nested-component-group';
+        compDiv.style.cssText = 'background: #f8f9fa; border-radius: 8px; padding: 16px; margin-bottom: 16px; border: 1px solid #e9ecef;';
+        
+        const header = document.createElement('div');
+        header.style.cssText = 'margin-bottom: 12px; font-weight: 600; color: #333; display: flex; align-items: center; gap: 8px;';
+        header.innerHTML = `
+          <span>🧩 ${nestedComp.name}</span>
+          <span style="background: #007BFF; color: white; font-size: 10px; padding: 2px 6px; border-radius: 12px; font-weight: normal;">
+            ${nestedComp.instances.length} instance${nestedComp.instances.length > 1 ? 's' : ''}
+          </span>
+        `;
+        compDiv.appendChild(header);
+        
+        // Add properties for this nested component
+        const properties = nestedComp.properties || [];
+        properties.forEach(prop => {
+          if (!prop || !prop.name) {
+            console.warn('⚠️ Invalid property in nested component:', prop);
+            return;
+          }
+          const propRow = document.createElement('div');
+          propRow.style.cssText = 'display: flex; align-items: center; margin-bottom: 8px; gap: 12px;';
+          
+          const propLabel = document.createElement('div');
+          propLabel.style.cssText = 'flex: 1; font-size: 12px; color: #666;';
+          propLabel.textContent = `${prop.name} (${prop.type})`;
+          
+          const arrow = document.createElement('div');
+          arrow.style.cssText = 'flex: 0 0 20px; text-align: center; color: #999;';
+          arrow.textContent = '→';
+          
+          const selectDiv = document.createElement('div');
+          selectDiv.style.cssText = 'flex: 2;';
+          
+          const select = document.createElement('select');
+          select.style.cssText = 'width: 100%; padding: 4px; font-size: 11px; border: 1px solid #ddd; border-radius: 4px;';
+          select.dataset.nestedComponentId = nestedComp.id;
+          select.dataset.propertyName = prop.originalName;
+          
+          // Create array-based attribute options
+          const arrayOptions = createArrayAttributeOptions();
+          select.innerHTML = '<option value="">Choose array attribute...</option>' + arrayOptions;
+          
+          select.addEventListener('change', (e) => {
+            handleNestedComponentMapping(nestedComp.id, prop.originalName, e.target.value);
+          });
+          
+          selectDiv.appendChild(select);
+          
+          propRow.appendChild(propLabel);
+          propRow.appendChild(arrow);
+          propRow.appendChild(selectDiv);
+          
+          compDiv.appendChild(propRow);
+        });
+        
+        container.appendChild(compDiv);
+        
+        } catch (compError) {
+          console.error(`❌ Error rendering nested component ${nestedComp?.name || 'unknown'}:`, compError);
+        }
+      });
+      
+      } catch (error) {
+        console.error('❌ Error rendering nested components section:', error);
+        // Hide the section if there's an error
+        const section = document.getElementById('nested-components-section');
+        if (section) {
+          section.style.display = 'none';
+        }
+      }
+    }
+    
+    function createArrayAttributeOptions() {
+      if (attributePaths.length === 0) {
+        return '<option value="">No attributes available</option>';
+      }
+      
+      let options = '';
+      const groups = {};
+      
+      // Group by property name and identify arrays
+      attributePaths.forEach(attr => {
+        const pathParts = attr.path.split('.');
+        const lastPart = pathParts[pathParts.length - 1];
+        const propertyName = lastPart.replace(/\[\d+\].*/, '');
+        
+        if (!groups[propertyName]) {
+          groups[propertyName] = [];
+        }
+        groups[propertyName].push(attr);
+      });
+      
+      // Create options for array patterns
+      Object.keys(groups).forEach(propName => {
+        const attrs = groups[propName];
+        const arrayAttrs = attrs.filter(attr => attr.path.includes('['));
+        
+        if (arrayAttrs.length > 1) {
+          // This is an array - create a pattern option
+          const basePath = arrayAttrs[0].path.replace(/\[\d+\]/, '[*]');
+          const sampleValue = JSON.stringify(arrayAttrs[0].value);
+          const truncatedValue = sampleValue.length > 30 ? sampleValue.substring(0, 30) + '...' : sampleValue;
+          
+          options += `<option value="${basePath}">${propName} (array) - ${truncatedValue}</option>`;
+        }
+      });
+      
+      return options;
+    }
+    
+    function handleNestedComponentMapping(componentId, propertyName, attributePath) {
+      // Store nested component mappings globally
+      if (!window.nestedComponentMappings) {
+        window.nestedComponentMappings = {};
+      }
+      
+      if (!window.nestedComponentMappings[componentId]) {
+        window.nestedComponentMappings[componentId] = {};
+      }
+      
+      if (attributePath) {
+        // Find sample attribute for this pattern
+        const samplePath = attributePath.replace('[*]', '[0]');
+        const sampleAttribute = attributePaths.find(attr => attr.path === samplePath);
+        
+        if (sampleAttribute) {
+          window.nestedComponentMappings[componentId][propertyName] = {
+            path: attributePath,
+            value: sampleAttribute.value,
+            type: sampleAttribute.type
+          };
+        }
+      } else {
+        delete window.nestedComponentMappings[componentId][propertyName];
+      }
+      
+      updateSaveButtons();
+    }
+    
     function handleAttributeSelection(originalPropertyName, displayPropertyName, attributePath) {
       if (attributePath) {
         // Check if this is a batch pattern (contains [*])
@@ -2045,8 +2239,16 @@
     function clearAllMappings() {
       componentMappings = {};
       
-      // Reset all dropdowns
+      // Clear nested component mappings
+      window.nestedComponentMappings = {};
+      
+      // Reset all dropdowns (regular and nested)
       document.querySelectorAll('.attribute-select').forEach(select => {
+        select.value = '';
+      });
+      
+      // Reset nested component dropdowns
+      document.querySelectorAll('#nested-components-list select').forEach(select => {
         select.value = '';
       });
       
@@ -2342,72 +2544,69 @@
         return;
       }
       
-      // Check if any mappings use batch patterns
-      const hasBatchMappings = Object.values(componentMappings).some(mapping => 
-        mapping.path && mapping.path.includes('[*]')
-      );
+      // Get nested component mappings
+      const nestedMappings = window.nestedComponentMappings || {};
       
-      if (hasBatchMappings) {
-        // Calculate array length from the data
-        let arrayLength = 0;
-        
-        for (const [propertyName, mapping] of Object.entries(componentMappings)) {
-          if (mapping.path && mapping.path.includes('[*]')) {
-            const pattern = mapping.path;
-            const arrayPath = pattern.split('[*]')[0];
-            
-            // Count how many items exist in this array pattern
-            const matchingItems = attributePaths.filter(attr => {
-              const regex = new RegExp(`^${arrayPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\[\\d+\\]`);
-              return regex.test(attr.path);
-            });
-            
-            // Get unique indices
-            const indices = new Set();
-            matchingItems.forEach(item => {
-              const match = item.path.match(/\[(\d+)\]/);
-              if (match) {
-                indices.add(parseInt(match[1]));
-              }
-            });
-            
-            arrayLength = Math.max(arrayLength, indices.size);
-          }
+      // Calculate array length from any array patterns (including nested ones)
+      let arrayLength = 0;
+      
+      // Check regular component mappings for batch patterns
+      for (const [propertyName, mapping] of Object.entries(componentMappings)) {
+        if (mapping.path && mapping.path.includes('[*]')) {
+          const len = calculateArrayLength(mapping.path);
+          console.log(`📊 Main component ${propertyName}: ${mapping.path} → length ${len}`);
+          arrayLength = Math.max(arrayLength, len);
         }
-        
-        // Handle batch creation
-        parent.postMessage({
-          pluginMessage: {
-            type: 'create-batch-components',
-            componentId: selectedComponent.id,
-            mappings: componentMappings,
-            arrayLength: arrayLength,
-            attributePaths: attributePaths // Send actual data for mapping
-          }
-        }, '*');
-      } else {
-        // Handle single component creation (existing logic)
-        const mappings = Object.entries(componentMappings).map(([propertyName, attributeData]) => {
-          // Extract just the attribute data without display properties
-          const { displayPropertyName, ...attribute } = attributeData;
-          return {
-            attribute: attribute,
-            componentId: selectedComponent.id,
-            property: { name: propertyName }
-          };
-        });
-        
-        // Send to plugin
-        parent.postMessage({
-          pluginMessage: {
-            type: 'apply-all-component-mappings',
-            mappings: mappings
-          }
-        }, '*');
       }
       
-      // Clear mappings after saving
+      // Check nested component mappings for array patterns
+      Object.values(nestedMappings).forEach(compMappings => {
+        Object.values(compMappings).forEach(mapping => {
+          if (mapping.path && mapping.path.includes('[*]')) {
+            const len = calculateArrayLength(mapping.path);
+            console.log(`📊 Nested component: ${mapping.path} → length ${len}`);
+            arrayLength = Math.max(arrayLength, len);
+          }
+        });
+      });
+      
+      console.log(`🎯 Final arrayLength: ${arrayLength}`);
+      
+      // Always use the enhanced hierarchical mapping approach
+      parent.postMessage({
+        pluginMessage: {
+          type: 'apply-hierarchical-mapping',
+          componentId: selectedComponent.id,
+          componentMappings: componentMappings,
+          nestedComponentMappings: nestedMappings,
+          arrayLength: arrayLength,
+          attributePaths: attributePaths
+        }
+      }, '*');
+      
+      // Clear mappings after applying
       clearAllMappings();
+    }
+    
+    function calculateArrayLength(pattern) {
+      const arrayPath = pattern.split('[*]')[0];
+      
+      // Count how many items exist in this array pattern
+      const matchingItems = attributePaths.filter(attr => {
+        const regex = new RegExp(`^${arrayPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\[\\d+\\]`);
+        return regex.test(attr.path);
+      });
+      
+      // Get unique indices
+      const indices = new Set();
+      matchingItems.forEach(item => {
+        const match = item.path.match(/\[(\d+)\]/);
+        if (match) {
+          indices.add(parseInt(match[1]));
+        }
+      });
+      
+      return indices.size;
     }
     
     // Tab 2 Event Handlers
